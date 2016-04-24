@@ -1,0 +1,6 @@
+Wave>=0.0.2
+python-memcached>=1.50
+requests>=2.4.3
+wsgiref>=0.1.2
+CherryPy>=4.0.0
+python-vlc>=1.1.2
