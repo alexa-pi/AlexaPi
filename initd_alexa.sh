@@ -21,7 +21,7 @@ start)
 
 stop)
     echo "Stopping Alexa.."
-    pkill -SIGINT ^main.py$
+    pkill -f AlexaPi\/main\.py
 ;;
 
 restart|force-reload)
