@@ -4,13 +4,18 @@
  
 ### Contributors
  
-* Sam Machin
- 
+* [Sam Machin](http://sammachin.com)
+* [Lenny Shirly](http://github.com/lennysh)
+* [dojones1](https://github.com/dojones1)
+* [Chris Kennedy](http://ck37.com)
+
 ---
  
 This is the code needed to Turn a Raspberry Pi into a client for Amazon's Alexa service, I have developed this against the Pi 2 but I see no reason it shouldn't run on the other models. Feedback welcome.
 ---
- 
+
+##NOTE THIS BRANCH IS STILL WORK IN PROGERESS, the MAIN is currently the reccomended build
+
 ### Requirements
 
 You will need:

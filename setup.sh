@@ -1,5 +1,10 @@
 #! /bin/bash
-
+cwd=`pwd`
+if [ "$EUID" -ne 0 ]
+	then echo "Please run as root"
+	exit
+fi
+ 
 wget --output-document vlc.py "http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=generated/vlc.py;hb=HEAD"
 apt-get update
 apt-get install libasound2-dev memcached python-pip python-alsaaudio vlc -y
@@ -7,6 +12,8 @@ pip install -r requirements.txt
 cp initd_alexa.sh /etc/init.d/AlexaPi
 update-rc.d AlexaPi defaults
 touch /var/log/alexa.log
+
+cd $cwd
 
 echo "Enter your Device Type ID:"
 read productid
