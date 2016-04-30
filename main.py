@@ -193,24 +193,41 @@ def process_response(r):
 			else:
 				if debug: print("{}NEW CONTENT TYPE RETURNED: {} {}".format(bcolors.WARNING, bcolors.ENDC, payload.get_content_type()))
 		# Now process the response
-		for directive in j['messageBody']['directives']:
-			if directive['namespace'] == 'SpeechSynthesizer':
-				if directive['name'] == 'speak':
-					GPIO.output(rec_light, GPIO.LOW)
-					play_audio(path + "tmpcontent/"+directive['payload']['audioContent'].lstrip("cid:")+".mp3")
-				elif directive['name'] == 'listen':
-					#listen for input - need to implement silence detection for this to be used.
-					if debug: print("{}Further Input Expected, timeout in: {} {}ms".format(bcolors.OKBLUE, bcolors.ENDC, directive['payload']['timeoutIntervalInMillis']))
-			elif directive['namespace'] == 'AudioPlayer':
-				#do audio stuff - still need to honor the playBehavior
-				if directive['name'] == 'play':
-					nav_token = directive['payload']['navigationToken']
-					for stream in directive['payload']['audioItem']['streams']:
-						if stream['progressReportRequired']:
-							streamid = stream['streamId']
-							playBehavior = directive['payload']['playBehavior']
-						pThread = threading.Thread(target=play_audio, args=(stream['streamUrl'], stream['offsetInMilliseconds']))
-						pThread.start()
+		if 'directives' in j['messageBody']:
+			for directive in j['messageBody']['directives']:
+				if directive['namespace'] == 'SpeechSynthesizer':
+					if directive['name'] == 'speak':
+						GPIO.output(rec_light, GPIO.LOW)
+						play_audio(path + "tmpcontent/"+directive['payload']['audioContent'].lstrip("cid:")+".mp3")
+					elif directive['name'] == 'listen':
+						#listen for input - need to implement silence detection for this to be used.
+						if debug: print("{}Further Input Expected, timeout in: {} {}ms".format(bcolors.OKBLUE, bcolors.ENDC, directive['payload']['timeoutIntervalInMillis']))
+				elif directive['namespace'] == 'AudioPlayer':
+					#do audio stuff - still need to honor the playBehavior
+					if directive['name'] == 'play':
+						nav_token = directive['payload']['navigationToken']
+						for stream in directive['payload']['audioItem']['streams']:
+							if stream['progressReportRequired']:
+								streamid = stream['streamId']
+								playBehavior = directive['payload']['playBehavior']
+							if stream['streamUrl'].startswith("cid:"):
+								content = path + "tmpcontent/"+stream['streamUrl'].lstrip("cid:")+".mp3"
+							else:
+								content = stream['streamUrl']
+							pThread = threading.Thread(target=play_audio, args=(content, stream['offsetInMilliseconds']))
+							pThread.start()
+		elif 'audioItem' in j['messageBody']: 			#Additional Audio Iten
+			nav_token = j['messageBody']['navigationToken']
+			for stream in j['messageBody']['audioItem']['streams']:
+				if stream['progressReportRequired']:
+					streamid = stream['streamId']
+				if stream['streamUrl'].startswith("cid:"):
+					content = path + "tmpcontent/"+stream['streamUrl'].lstrip("cid:")+".mp3"
+				else:
+					content = stream['streamUrl']
+				pThread = threading.Thread(target=play_audio, args=(content, stream['offsetInMilliseconds']))
+				pThread.start()
+			
 		return
 	elif r.status_code == 204:
 		GPIO.output(rec_light, GPIO.LOW)
