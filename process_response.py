@@ -5,9 +5,9 @@ streamurl = ""
 streamid = ""
 print r.content
 if r.status_code == 200:
-	 data = "Content-Type: " + r.headers['content-type'] +'\r\n\r\n'+ r.content
-	 msg = email.message_from_string(data)		
-	 for payload in msg.get_payload():
+	data = "Content-Type: " + r.headers['content-type'] +'\r\n\r\n'+ r.content
+	msg = email.message_from_string(data)		
+	for payload in msg.get_payload():
 		if payload.get_content_type() == "application/json":
 			j =  json.loads(payload.get_payload())
 			if debug: print("{}JSON String Returned:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, json.dumps(j)))
@@ -26,42 +26,16 @@ if r.status_code == 200:
 					#listen for input - need to implement silence detection for this to be used.
 					if debug: print("{}Further Input Expected, timeout in: {} {}ms".format(bcolors.OKBLUE, bcolors.ENDC, directive['payload']['timeoutIntervalInMillis']))
 			elif directive['namespace'] == 'AudioPlayer':
-				#do audio stuff
-			
-			
-			
-			nav_token = json_string_value(json_r, "navigationToken")
-			streamurl = json_string_value(json_r, "streamUrl")
-			if json_r.find('"progressReportRequired":false') == -1:
-				 streamid = json_string_value(json_r, "streamId")
-			if streamurl.find("cid:") == 0:					
-				streamurl = ""
-			playBehavior = json_string_value(json_r, "playBehavior")
-
-
-
-
-
-
-
-
-				playBehavior = json_string_value(json_r, "playBehavior")
-				if n == None and streamurl != "" and streamid.find("cid:") == -1:
-					pThread = threading.Thread(target=play_audio, args=(streamurl,))
-					streamurl = ""
+				#do audio stuff - still need to honor the playBehavior
+				if directive['name'] == 'play':
+				nav_token = directive['payload']['navigationToken']
+				for stream in directive['payload']['audioItem']['streams']
+					if stream['progressReportRequired']:
+						streamid = stream['streamId']
+					playBehavior = directive['payload']['playBehavior']
+					pThread = threading.Thread(target=play_audio, args=(stream['streamUrl'], stream['offsetInMilliseconds']))
 					pThread.start()
-					return
-				else:
-					GPIO.output(lights, GPIO.LOW)
-					for x in range(0, 3):
-						time.sleep(.2)
-						GPIO.output(rec_light, GPIO.HIGH)
-						time.sleep(.2)
-						GPIO.output(lights, GPIO.LOW)
-
-
-
-
+	return
 elif r.status_code == 204:
 	GPIO.output(rec_light, GPIO.LOW)
 	for x in range(0, 3):

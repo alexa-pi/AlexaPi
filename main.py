@@ -15,6 +15,7 @@ from memcache import Client
 import vlc
 import threading
 import cgi 
+import email
 
 
 #Settings
@@ -174,7 +175,61 @@ def alexa_playback_progress_report_request(requestType, playerActivity, streamid
 		if debug: print("{}Playback Progress Report was {}Successful!{}".format(bcolors.OKBLUE, bcolors.OKGREEN, bcolors.ENDC))
 
 def process_response(r):
-	#see file
+	global nav_token, streamurl, streamid
+	if debug: print("{}Processing Request Response...{}".format(bcolors.OKBLUE, bcolors.ENDC))
+	nav_token = ""
+	streamurl = ""
+	streamid = ""
+	print r.content
+	if r.status_code == 200:
+		data = "Content-Type: " + r.headers['content-type'] +'\r\n\r\n'+ r.content
+		msg = email.message_from_string(data)		
+		for payload in msg.get_payload():
+			if payload.get_content_type() == "application/json":
+				j =  json.loads(payload.get_payload())
+				if debug: print("{}JSON String Returned:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, json.dumps(j)))
+			elif payload.get_content_type() == "audio/mpeg":
+				filename = path + "tmpcontent/"+a.get('Content-ID').strip("<>")+".mp3" 
+				with open(filename, 'wb') as f:
+					f.write(payload.get_payload())
+			else:
+				if debug: print("{}NEW CONTENT TYPE RETURNED: {} {}".format(bcolors.WARNING, bcolors.ENDC, payload.get_content_type()))
+		# Now process the response
+			for directive in j['messageBody']['directives']:
+				if directive['namespace'] == 'SpeechSynthesizer':
+					if directive['name'] == 'speak':
+						play_audio(path + "tmpcontent/"+directive['payload']['audioContent'].lstrip("cid:")+".mp3")
+					elif directive['name'] == 'listen':
+						#listen for input - need to implement silence detection for this to be used.
+						if debug: print("{}Further Input Expected, timeout in: {} {}ms".format(bcolors.OKBLUE, bcolors.ENDC, directive['payload']['timeoutIntervalInMillis']))
+				elif directive['namespace'] == 'AudioPlayer':
+					#do audio stuff - still need to honor the playBehavior
+					if directive['name'] == 'play':
+					nav_token = directive['payload']['navigationToken']
+					for stream in directive['payload']['audioItem']['streams']
+						if stream['progressReportRequired']:
+							streamid = stream['streamId']
+						playBehavior = directive['payload']['playBehavior']
+						pThread = threading.Thread(target=play_audio, args=(stream['streamUrl'], stream['offsetInMilliseconds']))
+						pThread.start()
+		return
+	elif r.status_code == 204:
+		GPIO.output(rec_light, GPIO.LOW)
+		for x in range(0, 3):
+			time.sleep(.2)
+			GPIO.output(plb_light, GPIO.HIGH)
+			time.sleep(.2)
+			GPIO.output(plb_light, GPIO.LOW)
+		if debug: print("{}Request Response is null {}(This is OKAY!){}".format(bcolors.OKBLUE, bcolors.OKGREEN, bcolors.ENDC))
+	else:
+		print("{}(process_response Error){} Status Code: {}".format(bcolors.WARNING, bcolors.ENDC, r.status_code))
+		r.connection.close()
+		GPIO.output(lights, GPIO.LOW)
+		for x in range(0, 3):
+			time.sleep(.2)
+			GPIO.output(rec_light, GPIO.HIGH)
+			time.sleep(.2)
+			GPIO.output(lights, GPIO.LOW)
 		
 		
 	
@@ -186,33 +241,23 @@ def json_string_value(json_r, item):
 	else:
 		return ""
 
-def play_audio(file):
+def play_audio(file, offset=0):
 	global nav_token, p, audioplaying
 	if debug: print("{}Play_Audio Request for:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, file))
 	GPIO.output(plb_light, GPIO.HIGH)
 	i = vlc.Instance('--aout=alsa', '--alsa-audio-device=hw:CARD=ALSA,DEV=0')
-	mrl = ""
-	if file == "response.mp3" or file == "hello.mp3":
-		mrl = "{}{}".format(path, file)
-	else:
-		mrl = "{}".format(file)
-	
-	if mrl != "":
-		m = i.media_new(mrl)
-		p = i.media_player_new()
-		p.set_media(m)
-		mm = m.event_manager()
-		#mm.event_attach(vlc.EventType.MediaPlayerTimeChanged, pos_callback)
-		#mm.event_attach(vlc.EventType.MediaParsedChanged, meta_callback, m)
-		mm.event_attach(vlc.EventType.MediaStateChanged, state_callback, p)
-		audioplaying = True
-		p.audio_set_volume(100)
-		p.play()
-		while audioplaying:
-			continue
-		GPIO.output(plb_light, GPIO.LOW)
-	else:
-		print("(play_audio) mrl = Nothing!")
+	m = i.media_new(file)
+	p = i.media_player_new()
+	p.set_media(m)
+	mm = m.event_manager()
+	mm.event_attach(vlc.EventType.MediaStateChanged, state_callback, p)
+	audioplaying = True
+	p.audio_set_volume(100)
+	p.play()
+	while audioplaying:
+		continue
+	GPIO.output(plb_light, GPIO.LOW)
+
 
 def state_callback(event, player):
 	global nav_token, audioplaying, streamurl, streamid
@@ -336,8 +381,9 @@ def setup():
 		GPIO.output(plb_light, GPIO.HIGH)
 		time.sleep(.1)
 		GPIO.output(plb_light, GPIO.LOW)
-	play_audio("hello.mp3")
-	
+	play_audio(path+"hello.mp3")
+
+
 if __name__ == "__main__":
 	setup()
 	start()
