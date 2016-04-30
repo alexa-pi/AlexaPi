@@ -14,8 +14,6 @@ import re
 from memcache import Client
 import vlc
 import threading
-import cgi 
-
 
 #Settings
 button = 18 		# GPIO Pin with button connected
@@ -108,9 +106,7 @@ def alexa_speech_recognizer():
 				('file', ('audio', inf, 'audio/L16; rate=16000; channels=1'))
 				]
 		r = requests.post(url, headers=headers, files=files)
-	#process_response(r)
-	return r
-	
+	process_response(r)
 
 def alexa_getnextitem(nav_token):
 	# https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/rest/audioplayer-getnextitem-request
@@ -138,7 +134,7 @@ def alexa_playback_progress_report_request(requestType, playerActivity, streamid
 	headers = {'Authorization' : 'Bearer %s' % gettoken()}
 	d = {
 		"messageHeader": {},
-		"messageBody": {xs
+		"messageBody": {
 			"playbackState": {
 				"streamId": streamid,
 				"offsetInMilliseconds": 0,
@@ -174,10 +170,70 @@ def alexa_playback_progress_report_request(requestType, playerActivity, streamid
 		if debug: print("{}Playback Progress Report was {}Successful!{}".format(bcolors.OKBLUE, bcolors.OKGREEN, bcolors.ENDC))
 
 def process_response(r):
-	#see file
-		
-		
-	
+	global nav_token, streamurl, streamid
+	if debug: print("{}Processing Request Response...{}".format(bcolors.OKBLUE, bcolors.ENDC))
+	nav_token = ""
+	streamurl = ""
+	streamid = ""
+	if r.status_code == 200:
+		for v in r.headers['content-type'].split(";"):
+			if re.match('.*boundary.*', v):
+				boundary = v.split("=")[1]
+		data = r.content.split(boundary)
+		n = re.search('(?=audio\/mpeg)(.*?)(?=\r\n)', r.content)
+		r.connection.close()
+		audio = ""
+		for d in data:
+			m = re.search('(?<=Content\-Type: )(.*?)(?=\r\n)', d)
+			if m:
+				c_type = m.group(0)
+				if c_type == 'application/json':
+					json_r = d.split('\r\n\r\n')[1].rstrip('\r\n--')
+					if debug: print("{}JSON String Returned:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, json_r))
+					nav_token = json_string_value(json_r, "navigationToken")
+					streamurl = json_string_value(json_r, "streamUrl")
+					if json_r.find('"progressReportRequired":false') == -1:
+						streamid = json_string_value(json_r, "streamId")
+					if streamurl.find("cid:") == 0:					
+						streamurl = ""
+					playBehavior = json_string_value(json_r, "playBehavior")
+					if n == None and streamurl != "" and streamid.find("cid:") == -1:
+						pThread = threading.Thread(target=play_audio, args=(streamurl,))
+						streamurl = ""
+						pThread.start()
+						return
+					else:
+						GPIO.output(lights, GPIO.LOW)
+						for x in range(0, 3):
+							time.sleep(.2)
+							GPIO.output(rec_light, GPIO.HIGH)
+							time.sleep(.2)
+							GPIO.output(lights, GPIO.LOW)
+				elif c_type == 'audio/mpeg':
+					audio = d.split('\r\n\r\n')[1].rstrip('--')
+					if audio != "":
+						with open(path + "response.mp3", 'wb') as f:
+							f.write(audio)
+						GPIO.output(rec_light, GPIO.LOW)
+						play_audio("response.mp3")
+	elif r.status_code == 204:
+		GPIO.output(rec_light, GPIO.LOW)
+		for x in range(0, 3):
+			time.sleep(.2)
+			GPIO.output(plb_light, GPIO.HIGH)
+			time.sleep(.2)
+			GPIO.output(plb_light, GPIO.LOW)
+		if debug: print("{}Request Response is null {}(This is OKAY!){}".format(bcolors.OKBLUE, bcolors.OKGREEN, bcolors.ENDC))
+	else:
+		print("{}(process_response Error){} Status Code: {}".format(bcolors.WARNING, bcolors.ENDC, r.status_code))
+		r.connection.close()
+		GPIO.output(lights, GPIO.LOW)
+		for x in range(0, 3):
+			time.sleep(.2)
+			GPIO.output(rec_light, GPIO.HIGH)
+			time.sleep(.2)
+			GPIO.output(lights, GPIO.LOW)
+
 def json_string_value(json_r, item):
 	m = re.search('(?<={}":")(.*?)(?=")'.format(item), json_r)
 	if m:
@@ -190,6 +246,7 @@ def play_audio(file):
 	global nav_token, p, audioplaying
 	if debug: print("{}Play_Audio Request for:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, file))
 	GPIO.output(plb_light, GPIO.HIGH)
+	#subprocess.Popen(['mpg123', '-q', '{}{}'.format(path, file)]).wait()	
 	i = vlc.Instance('--aout=alsa', '--alsa-audio-device=hw:CARD=ALSA,DEV=0')
 	mrl = ""
 	if file == "response.mp3" or file == "hello.mp3":
@@ -313,8 +370,7 @@ def start():
 		inp = None
 		alexa_speech_recognizer()
 
-
-def setup():
+if __name__ == "__main__":
 	GPIO.setwarnings(False)
 	GPIO.cleanup()
 	GPIO.setmode(GPIO.BCM)
@@ -337,7 +393,4 @@ def setup():
 		time.sleep(.1)
 		GPIO.output(plb_light, GPIO.LOW)
 	play_audio("hello.mp3")
-	
-if __name__ == "__main__":
-	setup()
 	start()
