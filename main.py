@@ -253,7 +253,7 @@ def play_audio(file, offset=0):
 	global nav_token, p, audioplaying
 	if debug: print("{}Play_Audio Request for:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, file))
 	GPIO.output(plb_light, GPIO.HIGH)
-	i = vlc.Instance('--aout=alsa', '--alsa-audio-device=hw:CARD=ALSA,DEV=0')
+	i = vlc.Instance('--aout=alsa')
 	m = i.media_new(file)
 	p = i.media_player_new()
 	p.set_media(m)
