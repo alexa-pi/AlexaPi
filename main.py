@@ -109,8 +109,7 @@ def alexa_speech_recognizer():
 				('file', ('audio', inf, 'audio/L16; rate=16000; channels=1'))
 				]
 		r = requests.post(url, headers=headers, files=files)
-	#process_response(r)
-	return r
+	process_response(r)
 	
 
 def alexa_getnextitem(nav_token):
@@ -139,7 +138,7 @@ def alexa_playback_progress_report_request(requestType, playerActivity, streamid
 	headers = {'Authorization' : 'Bearer %s' % gettoken()}
 	d = {
 		"messageHeader": {},
-		"messageBody": {xs
+		"messageBody": {
 			"playbackState": {
 				"streamId": streamid,
 				"offsetInMilliseconds": 0,
@@ -180,7 +179,6 @@ def process_response(r):
 	nav_token = ""
 	streamurl = ""
 	streamid = ""
-	print r.content
 	if r.status_code == 200:
 		data = "Content-Type: " + r.headers['content-type'] +'\r\n\r\n'+ r.content
 		msg = email.message_from_string(data)		
@@ -189,27 +187,28 @@ def process_response(r):
 				j =  json.loads(payload.get_payload())
 				if debug: print("{}JSON String Returned:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, json.dumps(j)))
 			elif payload.get_content_type() == "audio/mpeg":
-				filename = path + "tmpcontent/"+a.get('Content-ID').strip("<>")+".mp3" 
+				filename = path + "tmpcontent/"+payload.get('Content-ID').strip("<>")+".mp3" 
 				with open(filename, 'wb') as f:
 					f.write(payload.get_payload())
 			else:
 				if debug: print("{}NEW CONTENT TYPE RETURNED: {} {}".format(bcolors.WARNING, bcolors.ENDC, payload.get_content_type()))
 		# Now process the response
-			for directive in j['messageBody']['directives']:
-				if directive['namespace'] == 'SpeechSynthesizer':
-					if directive['name'] == 'speak':
-						play_audio(path + "tmpcontent/"+directive['payload']['audioContent'].lstrip("cid:")+".mp3")
-					elif directive['name'] == 'listen':
-						#listen for input - need to implement silence detection for this to be used.
-						if debug: print("{}Further Input Expected, timeout in: {} {}ms".format(bcolors.OKBLUE, bcolors.ENDC, directive['payload']['timeoutIntervalInMillis']))
-				elif directive['namespace'] == 'AudioPlayer':
-					#do audio stuff - still need to honor the playBehavior
-					if directive['name'] == 'play':
+		for directive in j['messageBody']['directives']:
+			if directive['namespace'] == 'SpeechSynthesizer':
+				if directive['name'] == 'speak':
+					GPIO.output(rec_light, GPIO.LOW)
+					play_audio(path + "tmpcontent/"+directive['payload']['audioContent'].lstrip("cid:")+".mp3")
+				elif directive['name'] == 'listen':
+					#listen for input - need to implement silence detection for this to be used.
+					if debug: print("{}Further Input Expected, timeout in: {} {}ms".format(bcolors.OKBLUE, bcolors.ENDC, directive['payload']['timeoutIntervalInMillis']))
+			elif directive['namespace'] == 'AudioPlayer':
+				#do audio stuff - still need to honor the playBehavior
+				if directive['name'] == 'play':
 					nav_token = directive['payload']['navigationToken']
-					for stream in directive['payload']['audioItem']['streams']
+					for stream in directive['payload']['audioItem']['streams']:
 						if stream['progressReportRequired']:
 							streamid = stream['streamId']
-						playBehavior = directive['payload']['playBehavior']
+							playBehavior = directive['payload']['playBehavior']
 						pThread = threading.Thread(target=play_audio, args=(stream['streamUrl'], stream['offsetInMilliseconds']))
 						pThread.start()
 		return
@@ -230,16 +229,8 @@ def process_response(r):
 			GPIO.output(rec_light, GPIO.HIGH)
 			time.sleep(.2)
 			GPIO.output(lights, GPIO.LOW)
-		
-		
-	
-def json_string_value(json_r, item):
-	m = re.search('(?<={}":")(.*?)(?=")'.format(item), json_r)
-	if m:
-		if debug: print("{}{}:{} {}".format(bcolors.OKBLUE, item, bcolors.ENDC, m.group(0)))
-		return m.group(0)
-	else:
-		return ""
+
+
 
 def play_audio(file, offset=0):
 	global nav_token, p, audioplaying
