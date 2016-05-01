@@ -15,7 +15,7 @@
 This is the code needed to Turn a Raspberry Pi into a client for Amazon's Alexa service, I have developed this against the Pi 2 but I see no reason it shouldn't run on the other models. Feedback welcome.
 ---
 
-##NOTE THIS BRANCH IS STILL WORK IN PROGERESS, the MASTER is still the recommended build
+##NOTE This branch is beta, the MASTER is still the recommended build
 
 ### Requirements
 
@@ -39,7 +39,7 @@ Boot your fresh Pi and login to a command prompt as root.
 Make sure you are in /root
 
 Clone this repo to the Pi
-`git clone https://github.com/sammachin/AlexaPi.git`
+`git clone -b version1.1 https://github.com/sammachin/AlexaPi.git`
 Run the setup script
 `./setup.sh`
 
