@@ -194,6 +194,9 @@ def process_response(r):
 				if debug: print("{}NEW CONTENT TYPE RETURNED: {} {}".format(bcolors.WARNING, bcolors.ENDC, payload.get_content_type()))
 		# Now process the response
 		if 'directives' in j['messageBody']:
+			if len(j['messageBody']['directives']) == 0:
+				GPIO.output(rec_light, GPIO.LOW)
+				GPIO.output(plb_light, GPIO.LOW)
 			for directive in j['messageBody']['directives']:
 				if directive['namespace'] == 'SpeechSynthesizer':
 					if directive['name'] == 'speak':
@@ -248,8 +251,18 @@ def process_response(r):
 			GPIO.output(lights, GPIO.LOW)
 
 
+def tuneinplaylist(url):
+	req = requests.get(url)
+	r = requests.get(req.content)
+	for line in r.content.split('\n'):
+		if line.startswith('File'):
+			list = line.split("=")[1:]
+			nurl = "=".join(list)
+			return nurl
 
 def play_audio(file, offset=0):
+	if file.startswith('http://opml.radiotime.com'):
+		file = tuneinplaylist(file)
 	global nav_token, p, audioplaying
 	if debug: print("{}Play_Audio Request for:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, file))
 	GPIO.output(plb_light, GPIO.HIGH)
