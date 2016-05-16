@@ -14,8 +14,11 @@
  
 This is the code needed to Turn a Raspberry Pi into a client for Amazon's Alexa service, I have developed this against the Pi 2 but I see no reason it shouldn't run on the other models. Feedback welcome.
 ---
-
 ##NOTE This branch is beta, the MASTER is still the recommended build
+
+Added in this branch:
+Voice Recognition via CMU Sphinx.  When the word "alexa" is detected, Alexa responds with "Yes" and records 5 seconds of audio to be processed.
+Push button functionality still works the same as previously as well.
 
 ### Requirements
 
