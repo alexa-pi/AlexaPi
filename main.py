@@ -6,7 +6,6 @@ import time
 import RPi.GPIO as GPIO
 import alsaaudio
 import wave
-import random
 from creds import *
 import requests
 import json
@@ -17,6 +16,8 @@ import threading
 import cgi 
 import email
 
+from pocketsphinx.pocketsphinx import *
+from sphinxbase.sphinxbase import *
 
 #Settings
 button = 18 		# GPIO Pin with button connected
@@ -31,6 +32,31 @@ servers = ["127.0.0.1:11211"]
 mc = Client(servers, debug=1)
 path = os.path.realpath(__file__).rstrip(os.path.basename(__file__))
 
+#Sphinx setup
+sphinx_data_path = "/root/pocketsphinx/"
+modeldir = sphinx_data_path+"/model/"
+datadir = sphinx_data_path+"/test/data"
+
+# PocketSphinx configuration
+config = Decoder.default_config()
+
+# Set recognition model to US
+config.set_string('-hmm', os.path.join(modeldir, 'en-us/en-us'))
+config.set_string('-dict', os.path.join(modeldir, 'en-us/cmudict-en-us.dict'))
+
+#Specify recognition key phrase
+config.set_string('-keyphrase', trigger_phrase)
+config.set_float('-kws_threshold',3)
+
+# Hide the VERY verbose logging information
+config.set_string('-logfn', '/dev/null')
+
+# Process audio chunk by chunk. On keyword detected perform action and restart search
+decoder = Decoder(config)
+decoder.start_utt()
+
+trigger_phrase = "alexa"
+
 #Variables
 p = ""
 nav_token = ""
@@ -38,6 +64,8 @@ streamurl = ""
 streamid = ""
 position = 0
 audioplaying = False
+button_pressed = False
+start = time.time()
 
 #Debug
 debug = 1
@@ -325,59 +353,92 @@ def state_callback(event, player):
 		streamurl = ""
 		streamid = ""
 		nav_token = ""
-		
 
-def meta_callback(event, media):
-	title = media.get_meta(vlc.Meta.Title)
-	artist = media.get_meta(vlc.Meta.Artist)
-	album = media.get_meta(vlc.Meta.Album)
-	tracknumber = media.get_meta(vlc.Meta.TrackNumber)
-	url = media.get_meta(vlc.Meta.URL)
-	nowplaying = media.get_meta(vlc.Meta.NowPlaying)
-	print('{}Title:{} {}'.format(bcolors.OKBLUE, bcolors.ENDC, title))
-	print('{}Artist:{} {}'.format(bcolors.OKBLUE, bcolors.ENDC, artist))
-	print('{}Album:{} {}'.format(bcolors.OKBLUE, bcolors.ENDC, album))
-	print('{}Track:{} {}'.format(bcolors.OKBLUE, bcolors.ENDC, tracknumber))
-	print('{}Url:{} {}'.format(bcolors.OKBLUE, bcolors.ENDC, url))
-	print('{}Now Playing:{} {}'.format(bcolors.OKBLUE, bcolors.ENDC, nowplaying))
-
-def pos_callback(event):
-	global position
-	position = event.u.new_time
-	if debug: print("{}Player Position:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, format_time(position)))
-
-def format_time(self, milliseconds):
-	"""formats milliseconds to h:mm:ss
-	"""
-	self.position = milliseconds / 1000
-	m, s = divmod(self.position, 60)
-	h, m = divmod(m, 60)
-	return "%d:%02d:%02d" % (h, m, s)
+def detect_button(channel):
+        global button_pressed
+        if debug: print("{}Button Pressed! Recording...{}".format(bcolors.OKBLUE, bcolors.ENDC))
+        time.sleep(.05) # time for the button input to settle down
+        while (GPIO.input(button)==0):
+                button_pressed = True
+        if debug: print("{}Recording Finished.{}".format(bcolors.OKBLUE, bcolors.ENDC))
+        button_pressed = False
 
 def start():
-	global audioplaying, p
+	global audioplaying, p, button_pressed
+	audio = ""
+	record_audio = False
+	GPIO.add_event_detect(button, GPIO.FALLING, callback=detect_button, bouncetime=100) # threaded detection of button press
+	inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, device)
+        inp.setchannels(1)
+        inp.setrate(16000)
+        inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+        inp.setperiodsize(1024)
+        start = time.time()
 	while True:
-		print("{}Ready to Record.{}".format(bcolors.OKBLUE, bcolors.ENDC))
-		GPIO.wait_for_edge(button, GPIO.FALLING) # we wait for the button to be pressed
-		if audioplaying: p.stop()
-		print("{}Recording...{}".format(bcolors.OKBLUE, bcolors.ENDC))
-		GPIO.output(rec_light, GPIO.HIGH)
-		inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, device)
-		inp.setchannels(1)
-		inp.setrate(16000)
-		inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
-		inp.setperiodsize(500)
-		audio = ""
-		while(GPIO.input(button)==0): # we keep recording while the button is pressed
-			l, data = inp.read()
-			if l:
-				audio += data
-		print("{}Recording Finished.{}".format(bcolors.OKBLUE, bcolors.ENDC))
-		rf = open(path+'recording.wav', 'w')
-		rf.write(audio)
-		rf.close()
-		inp = None
+                while button_pressed == False and record_audio == False:
+
+                        time.sleep(.1)
+
+                        # Process microphone audio via PocketSphinx, listening for trigger word
+                        while decoder.hyp() == None and button_pressed == False:
+                                # Read from microphone
+                                l,buf = inp.read()
+                                # Detect if keyword/trigger word was said
+                                decoder.process_raw(buf, False, False)
+
+                        # if trigger word was said
+                        if decoder.hyp() != None:
+                                if audioplaying: p.stop()
+                                start = time.time()
+                                play_audio("alexayes.mp3")
+                                record_audio = True
+                # do the following things if either the button has been pressed or the trigger word has been said
+                if debug: print ("detected the edge, setting up audio")
+
+                # To avoid overflows close the microphone connection
+                inp.close()
+
+                if audioplaying: p.stop()
+
+                # Reenable reading microphone raw data
+                inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, device)
+                inp.setchannels(1)
+                inp.setrate(16000)
+                inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+                inp.setperiodsize(1024)
+                audio = ""
+
+
+                # Only write if we are recording (button still pressed or less than 5 sec
+                while button_pressed == True or (time.time() - start < 5):
+                        l, data = inp.read()
+                        if l:
+                                audio += data
+                        GPIO.output(rec_light, GPIO.HIGH)
+
+                if debug: print ("Debug: End recording")
+                GPIO.output(rec_light, GPIO.LOW)
+                rf = open(filename, 'w')
+                rf.write(audio)
+                rf.close()
+                inp.close()
+
+                if debug: print "Debug: Sending audio to be processed"
 		alexa_speech_recognizer()
+		
+                # Now that request is handled restart audio decoding
+                decoder.end_utt()
+                decoder.start_utt()
+                record_audio = False;
+
+                # Reenable reading microphone raw data
+                inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, device)
+                inp.setchannels(1)
+                inp.setrate(16000)
+                inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+                inp.setperiodsize(1024)
+                audio = ""
+
 
 
 def setup():
