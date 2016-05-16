@@ -6,7 +6,7 @@ if [ "$EUID" -ne 0 ]
 fi
 
 apt-get update
-apt-get install wget git build-essential autoconf libtool automake bison python-dev swig
+apt-get install wget git build-essential autoconf libtool automake bison python-dev swig -y
 
 cd /root
 git clone https://github.com/cmusphinx/sphinxbase.git
