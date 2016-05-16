@@ -33,6 +33,8 @@ mc = Client(servers, debug=1)
 path = os.path.realpath(__file__).rstrip(os.path.basename(__file__))
 
 #Sphinx setup
+trigger_phrase = "alexa"
+
 sphinx_data_path = "/root/pocketsphinx/"
 modeldir = sphinx_data_path+"/model/"
 datadir = sphinx_data_path+"/test/data"
@@ -54,8 +56,6 @@ config.set_string('-logfn', '/dev/null')
 # Process audio chunk by chunk. On keyword detected perform action and restart search
 decoder = Decoder(config)
 decoder.start_utt()
-
-trigger_phrase = "alexa"
 
 #Variables
 p = ""
@@ -418,7 +418,7 @@ def start():
 
                 if debug: print ("Debug: End recording")
                 GPIO.output(rec_light, GPIO.LOW)
-                rf = open(filename, 'w')
+                rf = open(path+'recording.wav', 'w')
                 rf.write(audio)
                 rf.close()
                 inp.close()
