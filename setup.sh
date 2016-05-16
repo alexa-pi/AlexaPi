@@ -4,9 +4,31 @@ if [ "$EUID" -ne 0 ]
 	then echo "Please run as root"
 	exit
 fi
- 
-wget --output-document vlc.py "http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=generated/vlc.py;hb=HEAD"
+
 apt-get update
+apt-get install wget git build-essential autoconf libtool automake bison python-dev swig
+
+cd /root
+git clone https://github.com/cmusphinx/sphinxbase.git
+
+cd /root/sphinxbase
+./autogen.sh
+make
+make install
+
+cd /root
+rm -r /root/sphinxbase
+
+git clone https://github.com/cmusphinx/pocketsphinx.git
+
+cd /root/pocketsphinx
+./autogen.sh
+make
+make install
+
+cd $cwd
+
+wget --output-document vlc.py "http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=generated/vlc.py;hb=HEAD"
 apt-get install libasound2-dev memcached python-pip python-alsaaudio vlc -y
 pip install -r requirements.txt
 cp initd_alexa.sh /etc/init.d/AlexaPi
