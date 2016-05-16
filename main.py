@@ -390,7 +390,7 @@ def start():
                         if decoder.hyp() != None:
                                 if audioplaying: p.stop()
                                 start = time.time()
-                                play_audio("alexayes.mp3")
+                                play_audio(path+'alexayes.mp3')
                                 record_audio = True
                 # do the following things if either the button has been pressed or the trigger word has been said
                 if debug: print ("detected the edge, setting up audio")
