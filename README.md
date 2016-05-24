@@ -19,6 +19,7 @@ This is the code needed to Turn a Raspberry Pi into a client for Amazon's Alexa 
 Added in this branch:
 Voice Recognition via CMU Sphinx.  When the word "alexa" is detected, Alexa responds with "Yes" and records 5 seconds of audio to be processed.
 Push button functionality still works the same as previously as well.
+Also added an option for the user to install shairport-sync for airplay support.
 
 ### Requirements
 
@@ -60,6 +61,8 @@ The device name can be set in the settings at the top of main.py
 
 You may need to adjust the volume and/or input gain for the microphone, you can do this with 
 `alsamixer`
+Once the adjustments have been made, you can save the settings using
+`alsactl store`
 
 ### Advanced Install
 
