@@ -5,9 +5,21 @@ if [ "$EUID" -ne 0 ]
 	exit
 fi
 
+read -p "Would you like to also install Airplay support (Y/n)? " shairport
+
+case ${shairport:0:1} in
+        n:N ) 
+        	echo "shairport-sync (Airplay) will NOT be installed."
+        ;;
+        * )
+        	echo "shairport-sync (Airplay) WILL be installed."
+        ;;
+esac
+
 apt-get update
 apt-get install wget git build-essential autoconf libtool automake bison python-dev swig -y
 
+echo "--building and installing sphinxbase--"
 cd /root
 git clone https://github.com/cmusphinx/sphinxbase.git
 
@@ -19,6 +31,7 @@ make install
 cd /root
 rm -r /root/sphinxbase
 
+echo "--building and installing pocketsphinx--"
 git clone https://github.com/cmusphinx/pocketsphinx.git
 
 cd /root/pocketsphinx
@@ -35,8 +48,27 @@ cp initd_alexa.sh /etc/init.d/AlexaPi
 update-rc.d AlexaPi defaults
 touch /var/log/alexa.log
 
-cd $cwd
+case ${shairport:0:1} in
+        n:N ) ;;
+        * )
+                echo "--building and installing shairport-sync--"
+                cd /root
+                apt-get install libdaemon-dev libasound2-dev libpopt-dev libconfig-dev avahi-daemon libavahi-client-dev libssl-dev libsoxr-dev -y
+                git clone https://github.com/mikebrady/shairport-sync.git
+                cd shairport-sync
+                autoreconf -i -f
+                ./configure --with-alsa --with-avahi --with-ssl=openssl --with-soxr --with-metadata --with-pipe --with-systemd
+                make
+                getent group shairport-sync &>/dev/null || sudo groupadd -r shairport-sync >/dev/null
+                getent passwd shairport-sync &> /dev/null || sudo useradd -r -M -g shairport-sync -s /usr/bin/nologin -G audio shairport-sync >/dev/null
+                make install
+                systemctl enable shairport-sync
+                cd $cwd
+                rm -r /root/shairport-sync
+        ;;
+esac
 
+echo "--Creating creds.py--"
 echo "Enter your Device Type ID:"
 read productid
 echo ProductID = \"$productid\" >> creds.py
