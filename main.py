@@ -356,12 +356,14 @@ def state_callback(event, player):
 
 def detect_button(channel):
         global button_pressed
+        button_pressed = True
         if debug: print("{}Button Pressed! Recording...{}".format(bcolors.OKBLUE, bcolors.ENDC))
-        time.sleep(.05) # time for the button input to settle down
+        time.sleep(.5) # time for the button input to settle down
         while (GPIO.input(button)==0):
                 button_pressed = True
         if debug: print("{}Recording Finished.{}".format(bcolors.OKBLUE, bcolors.ENDC))
         button_pressed = False
+        time.sleep(.5) # more time for the button to settle down
 
 def start():
 	global audioplaying, p, button_pressed
