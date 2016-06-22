@@ -16,6 +16,17 @@ case ${shairport:0:1} in
         ;;
 esac
 
+read -p "Would you like to add always-on monitoring (Y/n)? " monitorAlexa
+
+case ${monitorAlexa:0:1} in
+        n:N ) 
+        	echo "monitoring will NOT be installed."
+        ;;
+        * )
+        	echo "monitoring WILL be installed."
+        ;;
+esac
+
 apt-get update
 apt-get install wget git build-essential autoconf libtool automake bison python-dev swig -y
 
@@ -65,6 +76,22 @@ case ${shairport:0:1} in
                 systemctl enable shairport-sync
                 cd $cwd
                 rm -r /root/shairport-sync
+        ;;
+esac
+
+case ${monitorAlexa:0:1} in
+        n:N ) ;;
+        * )
+        	echo "--adding always-on monitoring to crontab--"
+        	crontab -l > newcron.txt
+		if cat newcron.txt | grep monitorAlexa.sh > /dev/null
+		then
+        		echo "Alexa monitoring already exists"
+		else
+        		echo "*/5 * * * * /root/AlexaPi/monitorAlexa.sh" >> newcron.txt
+        		crontab newcron.txt
+		fi
+		rm newcron.txt
         ;;
 esac
 
