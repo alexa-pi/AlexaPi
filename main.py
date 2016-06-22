@@ -15,6 +15,7 @@ import vlc
 import threading
 import cgi 
 import email
+import optparse
 
 from pocketsphinx.pocketsphinx import *
 from sphinxbase.sphinxbase import *
@@ -25,6 +26,26 @@ plb_light = 24		# GPIO Pin for the playback/activity light
 rec_light = 25		# GPIO Pin for the recording light
 lights = [plb_light, rec_light] 	# GPIO Pins with LED's connected
 device = "plughw:1" # Name of your microphone/sound card in arecord -L
+
+#Get arguments
+parser = optparse.OptionParser()
+parser.add_option('-s', '--silent',
+                dest="silent",
+                action="store_true",
+                default=False,
+                help="start without saying hello"
+                )
+parser.add_option('-d', '--debug',
+                dest="debug",
+                action="store_true",
+                default=False,
+                help="display debug messages"
+                )
+
+cmdopts, cmdargs = parser.parse_args()
+silent = cmdopts.silent
+debug = cmdopts.debug
+
 
 #Setup
 recorded = False
@@ -66,9 +87,6 @@ position = 0
 audioplaying = False
 button_pressed = False
 start = time.time()
-
-#Debug
-debug = 1
 
 class bcolors:
 	HEADER = '\033[95m'
@@ -471,7 +489,7 @@ def setup():
 		GPIO.output(plb_light, GPIO.HIGH)
 		time.sleep(.1)
 		GPIO.output(plb_light, GPIO.LOW)
-	play_audio(path+"hello.mp3")
+	if (silent == False): play_audio(path+"hello.mp3")
 
 
 if __name__ == "__main__":
