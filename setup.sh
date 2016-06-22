@@ -88,7 +88,7 @@ case ${monitorAlexa:0:1} in
 		then
         		echo "Alexa monitoring already exists"
 		else
-        		echo "*/5 * * * * /root/AlexaPi/monitorAlexa.sh" >> newcron.txt
+        		echo "*/1 * * * * /root/AlexaPi/monitorAlexa.sh" >> newcron.txt
         		crontab newcron.txt
 		fi
 		rm newcron.txt
@@ -98,7 +98,7 @@ esac
 echo "--Creating creds.py--"
 echo "Enter your Device Type ID:"
 read productid
-echo ProductID = \"$productid\" >> creds.py
+echo ProductID = \"$productid\" > creds.py
 
 echo "Enter your Security Profile Description:"
 read spd
