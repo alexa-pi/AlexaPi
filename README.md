@@ -22,6 +22,10 @@ Added in this branch:
 * Push button functionality still works the same as previously as well.
 * Option for the user to install shairport-sync for airplay support.
 * A ten-second button press will trigger a system halt.
+* Option to monitor for Alexa every minute and re-start if it has died.
+* Command line arguments added:
+ `(-s / --silent)` = start without saying "Hello"
+ `(-d / --debug)` = enable display of debug messages at command prompt
 
 ### Requirements
 
