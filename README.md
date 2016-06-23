@@ -57,6 +57,16 @@ Follow instructions....
 
 Enjoy :)
 
+### Always-on monitoring
+
+If you select to install always-on monitoring, the system will re-spawn AlexaPi anytime it crashes.
+This is useful for a stand-alone device, but probably too heavy-handed if you want to use the Pi for anything else.
+
+To prevent the re-spawn from happening, add a file called "dont_start" into the /tmp directory: `touch /tmp/dont_start`
+This will kill the current version of main.py, and not start a new one.  `rm /tmp/dont_start` will return to re-spawning.
+
+After a reboot, AlexaPi will be restarted and re-spawned as usual.
+
 ### Issues/Bugs etc.
 
 If your alexa isn't running on startup you can check /var/log/alexa.log for errrors.
