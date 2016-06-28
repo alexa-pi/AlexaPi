@@ -52,7 +52,7 @@ Boot your fresh Pi and login to a command prompt as root.
 Make sure you are in /root
 
 Clone this repo to the Pi
-`git clone https://github.com/maso27/AlexaPi.git`
+`git clone --branch version1.2 https://github.com/maso27/AlexaPi.git`
 Run the setup script
 `./setup.sh`
 
