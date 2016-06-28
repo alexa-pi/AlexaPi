@@ -10,6 +10,7 @@
 * [Chris Kennedy](http://ck37.com)
 * [Anand](http://padfoot.in)
 * [Mason Stone](https://github.com/maso27)
+* [Nascent Objects](https://github.com/nascentobjects)
 
 ---
  
@@ -18,14 +19,16 @@ This is the code needed to Turn a Raspberry Pi into a client for Amazon's Alexa 
 ##NOTE This branch is a hacked-up version of the original at sammachin's repository
 
 Added in this branch:
-* Voice Recognition via CMU Sphinx.  When the word "alexa" is detected, Alexa responds with "Yes" and records 5 seconds of audio to be processed.
+* Voice Recognition via CMU Sphinx.  When the word "alexa" is detected, Alexa responds with "Yes" and the subsequent audio to be processed.
 * Push button functionality still works the same as previously as well.
 * Option for the user to install shairport-sync for airplay support.
 * A ten-second button press will trigger a system halt.
-* Option to monitor for Alexa every minute and re-start if it has died.
+* Option to monitor for Alexa continuously and re-start if it has died.
 * Command line arguments added:
  `(-s / --silent)` = start without saying "Hello"
  `(-d / --debug)` = enable display of debug messages at command prompt
+* tunein support is improved
+* volume control via "set volume xx" where xx is between 1 and 10
 
 ### Requirements
 
@@ -63,7 +66,7 @@ If you select to install always-on monitoring, the system will re-spawn AlexaPi 
 This is useful for a stand-alone device, but probably too heavy-handed if you want to use the Pi for anything else.
 
 To prevent the re-spawn from happening, add a file called "dont_start" into the /tmp directory: `touch /tmp/dont_start`
-This will kill the current version of main.py, and not start a new one.  `rm /tmp/dont_start` will return to re-spawning.
+This will kill prevent the script from creating a new instance of main.py, and a "kill" command will now truly kill the alexa program.  `rm /tmp/dont_start` will return to re-spawning.
 
 After a reboot, AlexaPi will be restarted and re-spawned as usual.
 
