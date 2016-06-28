@@ -62,23 +62,16 @@ case $shairport in
         ;;
 esac
 
-update-rc.d AlexaPi defaults
-
 case $monitorAlexa in
-        [nN] ) ;;
+        [nN] ) 
+		cp initd_alexa.sh /etc/init.d/AlexaPi
+	;;
         * )
-        	echo "--adding always-on monitoring to crontab--"
-        	crontab -l > newcron.txt
-		if cat newcron.txt | grep monitorAlexa.sh > /dev/null
-		then
-        		echo "Alexa monitoring already exists"
-		else
-        		echo "*/1 * * * * /root/AlexaPi/monitorAlexa.sh" >> newcron.txt
-        		crontab newcron.txt
-		fi
-		rm newcron.txt
+		cp initd_alexa_monitored.sh /etc/init.d/AlexaPi
         ;;
 esac
+
+update-rc.d AlexaPi defaults
 
 echo "--Creating creds.py--"
 echo "Enter your Device Type ID:"
