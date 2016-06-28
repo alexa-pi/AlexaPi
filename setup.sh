@@ -7,8 +7,8 @@ fi
 
 read -p "Would you like to also install Airplay support (Y/n)? " shairport
 
-case ${shairport:0:1} in
-        n:N ) 
+case $shairport in
+        [nN] ) 
         	echo "shairport-sync (Airplay) will NOT be installed."
         ;;
         * )
@@ -18,8 +18,8 @@ esac
 
 read -p "Would you like to add always-on monitoring (Y/n)? " monitorAlexa
 
-case ${monitorAlexa:0:1} in
-        n:N ) 
+case $monitorAlexa in
+        [nN] ) 
         	echo "monitoring will NOT be installed."
         ;;
         * )
@@ -42,8 +42,8 @@ apt-get install libasound2-dev memcached python-pip python-alsaaudio vlc -y
 pip install -r requirements.txt
 touch /var/log/alexa.log
 
-case ${shairport:0:1} in
-        n:N ) ;;
+case $shairport in
+        [nN] ) ;;
         * )
                 echo "--building and installing shairport-sync--"
                 cd /root
@@ -64,8 +64,8 @@ esac
 
 update-rc.d AlexaPi defaults
 
-case ${monitorAlexa:0:1} in
-        n:N ) ;;
+case $monitorAlexa in
+        [nN] ) ;;
         * )
         	echo "--adding always-on monitoring to crontab--"
         	crontab -l > newcron.txt
