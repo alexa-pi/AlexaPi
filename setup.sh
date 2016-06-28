@@ -28,7 +28,7 @@ case ${monitorAlexa:0:1} in
 esac
 
 apt-get update
-apt-get install wget git build-essential autoconf libtool automake bison python-dev swig -y
+apt-get install wget git -y
 
 cd /root
 
@@ -47,7 +47,7 @@ case ${shairport:0:1} in
         * )
                 echo "--building and installing shairport-sync--"
                 cd /root
-                apt-get install libdaemon-dev libasound2-dev libpopt-dev libconfig-dev avahi-daemon libavahi-client-dev libssl-dev libsoxr-dev -y
+                apt-get install autoconf libdaemon-dev libasound2-dev libpopt-dev libconfig-dev avahi-daemon libavahi-client-dev libssl-dev libsoxr-dev -y
                 git clone https://github.com/mikebrady/shairport-sync.git
                 cd shairport-sync
                 autoreconf -i -f
