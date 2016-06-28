@@ -4,3 +4,8 @@ requests>=2.4.3
 wsgiref>=0.1.2
 CherryPy>=4.0.0
 python-vlc>=1.1.2
+pyalsaaudio>=0.8.2
+py-getch>=1.0.1
+pocketsphinx>=0.1.0
+webrtcvad>=2.0.7
+

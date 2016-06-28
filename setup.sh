@@ -30,31 +30,18 @@ esac
 apt-get update
 apt-get install wget git build-essential autoconf libtool automake bison python-dev swig -y
 
-echo "--building and installing sphinxbase--"
 cd /root
-git clone https://github.com/cmusphinx/sphinxbase.git
 
-cd /root/sphinxbase
-./autogen.sh
-make
-make install
-
-cd /root
-rm -r /root/sphinxbase
-
-echo "--building and installing pocketsphinx--"
+echo "--copying pocketsphinx--"
 git clone https://github.com/cmusphinx/pocketsphinx.git
-
-cd /root/pocketsphinx
-./autogen.sh
-make
-make install
 
 cd $cwd
 
 wget --output-document vlc.py "http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=generated/vlc.py;hb=HEAD"
 apt-get install libasound2-dev memcached python-pip python-alsaaudio vlc -y
 pip install -r requirements.txt
+cp initd_alexa.sh /etc/init.d/AlexaPi
+update-rc.d AlexaPi defaults
 touch /var/log/alexa.log
 
 case ${shairport:0:1} in
@@ -78,15 +65,20 @@ case ${shairport:0:1} in
 esac
 
 case ${monitorAlexa:0:1} in
-        n:N )
-        	cp initd_alexa.sh /etc/init.d/AlexaPi
-        ;;
+        n:N ) ;;
         * )
-        	echo "--adding always-on monitoring--"
-        	cp initd_alexa_monitored.sh /etc/init.d/AlexaPi
+        	echo "--adding always-on monitoring to crontab--"
+        	crontab -l > newcron.txt
+		if cat newcron.txt | grep monitorAlexa.sh > /dev/null
+		then
+        		echo "Alexa monitoring already exists"
+		else
+        		echo "*/1 * * * * /root/AlexaPi/monitorAlexa.sh" >> newcron.txt
+        		crontab newcron.txt
+		fi
+		rm newcron.txt
         ;;
 esac
-update-rc.d AlexaPi defaults
 
 echo "--Creating creds.py--"
 echo "Enter your Device Type ID:"
