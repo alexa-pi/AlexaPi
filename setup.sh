@@ -5,6 +5,8 @@ if [ "$EUID" -ne 0 ]
 	exit
 fi
 
+chmod +x *.sh
+
 read -p "Would you like to also install Airplay support (Y/n)? " shairport
 
 case $shairport in
