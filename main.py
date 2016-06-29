@@ -268,9 +268,16 @@ def process_response(r):
 					if directive['name'] == 'speak':
 						GPIO.output(rec_light, GPIO.LOW)
 						play_audio(path + "tmpcontent/"+directive['payload']['audioContent'].lstrip("cid:")+".mp3")
-					elif directive['name'] == 'listen':
-						#listen for input - need to implement silence detection for this to be used.
-						if debug: print("{}Further Input Expected, timeout in: {} {}ms".format(bcolors.OKBLUE, bcolors.ENDC, directive['payload']['timeoutIntervalInMillis']))
+					for directive in j['messageBody']['directives']: # if Alexa expects a response
+						if directive['namespace'] == 'SpeechRecognizer': # this is included in the same string as above if a response was expected
+							if directive['name'] == 'listen':
+								if debug: print("{}Further Input Expected, timeout in: {} {}ms".format(bcolors.OKBLUE, bcolors.ENDC, directive['payload']['timeoutIntervalInMillis']))
+								play_audio(path+'beep.wav', 0, 100)
+								timeout = directive['payload']['timeoutIntervalInMillis']/116
+								# listen until the timeout from Alexa
+								silence_listener(timeout)
+								# now process the response
+								alexa_speech_recognizer()
 				elif directive['namespace'] == 'AudioPlayer':
 					#do audio stuff - still need to honor the playBehavior
 					if directive['name'] == 'play':
@@ -437,48 +444,9 @@ def detect_button(channel):
         if debug: print("{}Recording Finished.{}".format(bcolors.OKBLUE, bcolors.ENDC))
         button_pressed = False
         time.sleep(.5) # more time for the button to settle down
-
-def start():
-	global audioplaying, p, vad, button_pressed
-	GPIO.add_event_detect(button, GPIO.FALLING, callback=detect_button, bouncetime=100) # threaded detection of button press
-	while True:
-		if debug == False: os.system("rm /root/AlexaPi/tmpcontent/*")
-		record_audio = False
 		
-		# Enable reading microphone raw data
-		inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, device)
-		inp.setchannels(1)
-		inp.setrate(16000)
-		inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
-		inp.setperiodsize(1024)
-		audio = ""
-		start = time.time()
-
-                while button_pressed == False and record_audio == False:
-
-			time.sleep(.1)
-
-			# Process microphone audio via PocketSphinx, listening for trigger word
-			while decoder.hyp() == None and button_pressed == False:
-				# Read from microphone
-				l,buf = inp.read()
-				# Detect if keyword/trigger word was said
-				decoder.process_raw(buf, False, False)
-
-			# if trigger word was said
-			if decoder.hyp() != None:
-				if audioplaying: p.stop()
-				start = time.time()
-				record_audio = True
-				play_audio(path+'alexayes.mp3', 0)
-		# do the following things if either the button has been pressed or the trigger word has been said
-		if debug: print ("detected the edge, setting up audio")
-
-		# To avoid overflows close the microphone connection
-		inp.close()
-
-		if audioplaying: p.stop()
-
+def silence_listener(throwaway_frames):
+		global button_pressed
 		# Reenable reading microphone raw data
 		inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, device)
 		inp.setchannels(1)
@@ -486,6 +454,7 @@ def start():
 		inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
 		inp.setperiodsize(VAD_PERIOD)
 		audio = ""
+
 
 		# Buffer as long as we haven't heard enough silence or the total size is within max size
 		thresholdSilenceMet = False
@@ -495,7 +464,7 @@ def start():
 		start = time.time()
 
 		# do not count first 10 frames when doing VAD
-		while (frames < VAD_THROWAWAY_FRAMES):
+		while (frames < throwaway_frames): # VAD_THROWAWAY_FRAMES):
 			l, data = inp.read()
 			frames = frames + 1
 			if l:
@@ -527,13 +496,62 @@ def start():
 
 		if debug: print ("Debug: End recording")
 
-		if debug: play_audio(path+'beep.wav', 0, 100)
+		# if debug: play_audio(path+'beep.wav', 0, 100)
 
 		GPIO.output(rec_light, GPIO.LOW)
 		rf = open(path+'recording.wav', 'w')
 		rf.write(audio)
 		rf.close()
 		inp.close()
+		
+
+def start():
+	global audioplaying, p, vad, button_pressed
+	GPIO.add_event_detect(button, GPIO.FALLING, callback=detect_button, bouncetime=100) # threaded detection of button press
+	while True:
+		record_audio = False
+		
+		# Enable reading microphone raw data
+		inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, device)
+		inp.setchannels(1)
+		inp.setrate(16000)
+		inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
+		inp.setperiodsize(1024)
+		audio = ""
+		start = time.time()
+
+                while record_audio == False:
+
+			time.sleep(.1)
+
+			# Process microphone audio via PocketSphinx, listening for trigger word
+			while decoder.hyp() == None and button_pressed == False:
+				# Read from microphone
+				l,buf = inp.read()
+				# Detect if keyword/trigger word was said
+				decoder.process_raw(buf, False, False)
+
+			# if trigger word was said
+			if decoder.hyp() != None:
+				if audioplaying: p.stop()
+				start = time.time()
+				record_audio = True
+				play_audio(path+'alexayes.mp3', 0)
+			elif button_pressed:
+				if audioplaying: p.stop()
+				record_audio = True
+
+		# do the following things if either the button has been pressed or the trigger word has been said
+		if debug: print ("detected the edge, setting up audio")
+
+		# To avoid overflows close the microphone connection
+		inp.close()
+
+		# clean up the temp directory
+		if debug == False: os.system("rm /root/AlexaPi/tmpcontent/*")
+
+		if debug: print "Starting to listen..."
+		silence_listener(VAD_THROWAWAY_FRAMES)
 
 		if debug: print "Debug: Sending audio to be processed"
 		alexa_speech_recognizer()
