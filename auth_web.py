@@ -47,5 +47,6 @@ cherrypy.config.update({ "environment": "embedded" })
 
 ip =[(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]
 print "Ready goto http://{}:5050 or http://localhost:5050  to begin the auth process".format(ip) 
+print "(Press Ctrl-C to exit this script once authorization is complete)".format(ip)
 cherrypy.quickstart(Start())
 
