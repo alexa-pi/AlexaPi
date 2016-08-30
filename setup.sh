@@ -18,14 +18,14 @@ case $shairport in
         ;;
 esac
 
-read -p "Would you like to add always-on monitoring (Y/n)? " monitorAlexa
+read -p "Would you like to add always-on monitoring (y/N)? " monitorAlexa
 
 case $monitorAlexa in
-        [nN] ) 
-        	echo "monitoring will NOT be installed."
+        [yY] ) 
+        	echo "monitoring WILL be installed."
         ;;
         * )
-        	echo "monitoring WILL be installed."
+        	echo "monitoring will NOT be installed."
         ;;
 esac
 
@@ -40,7 +40,7 @@ git clone https://github.com/cmusphinx/pocketsphinx.git
 cd $cwd
 
 wget --output-document vlc.py "http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=generated/vlc.py;hb=HEAD"
-apt-get install python-dev swig libasound2-dev memcached python-pip python-alsaaudio vlc -y
+apt-get install python-dev swig libasound2-dev memcached python-pip python-alsaaudio vlc libpulse-dev -y
 pip install -r requirements.txt
 touch /var/log/alexa.log
 
@@ -65,11 +65,11 @@ case $shairport in
 esac
 
 case $monitorAlexa in
-        [nN] ) 
-		cp initd_alexa.sh /etc/init.d/AlexaPi
+        [yY] ) 
+		cp initd_alexa_monitored.sh /etc/init.d/AlexaPi
 	;;
         * )
-		cp initd_alexa_monitored.sh /etc/init.d/AlexaPi
+		cp initd_alexa.sh /etc/init.d/AlexaPi	
         ;;
 esac
 
