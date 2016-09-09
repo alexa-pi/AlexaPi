@@ -94,7 +94,7 @@ Once the adjustments have been made, you can save the settings using
 
 ## Contributors
 * [Sam Machin](http://sammachin.com)
-* [Lenny Shirly](https://github.com/lennysh)
+* [Lenny Shirley](https://github.com/lennysh)
 * [dojones1](https://github.com/dojones1)
 * [Chris Kennedy](http://ck37.com)
 * [Anand](http://padfoot.in)
