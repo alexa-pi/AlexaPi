@@ -1,1 +1,11 @@
+*__pycache__*
+*.pyc
+
 creds*
+src/creds*
+
+recording.wav
+src/recording.wav
+src/tmpcontent/*.mp3
+
+.idea

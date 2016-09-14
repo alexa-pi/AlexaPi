@@ -58,6 +58,7 @@ recorded = False
 servers = ["127.0.0.1:11211"]
 mc = Client(servers, debug=1)
 path = os.path.realpath(__file__).rstrip(os.path.basename(__file__))
+resources_path = path + '/resources/'
 
 #Sphinx setup
 trigger_phrase = "alexa"
@@ -272,7 +273,7 @@ def process_response(r):
 						if directive['namespace'] == 'SpeechRecognizer': # this is included in the same string as above if a response was expected
 							if directive['name'] == 'listen':
 								if debug: print("{}Further Input Expected, timeout in: {} {}ms".format(bcolors.OKBLUE, bcolors.ENDC, directive['payload']['timeoutIntervalInMillis']))
-								play_audio(path+'beep.wav', 0, 100)
+								play_audio(resources_path+'beep.wav', 0, 100)
 								timeout = directive['payload']['timeoutIntervalInMillis']/116
 								# listen until the timeout from Alexa
 								silence_listener(timeout)
@@ -438,7 +439,7 @@ def detect_button(channel):
                 button_pressed = True
                 time.sleep(.1)
                 if time.time() - buttonPress > 10: # pressing button for 10 seconds triggers a system halt
-                	play_audio(path+'alexahalt.mp3')
+                	play_audio(resources_path+'alexahalt.mp3')
                 	if debug: print("{} -- 10 second putton press.  Shutting down. -- {}".format(bcolors.WARNING, bcolors.ENDC))
                 	os.system("halt")
         if debug: print("{}Recording Finished.{}".format(bcolors.OKBLUE, bcolors.ENDC))
@@ -496,7 +497,7 @@ def silence_listener(throwaway_frames):
 
 		if debug: print ("Debug: End recording")
 
-		# if debug: play_audio(path+'beep.wav', 0, 100)
+		# if debug: play_audio(resources_path+'beep.wav', 0, 100)
 
 		GPIO.output(rec_light, GPIO.LOW)
 		rf = open(path+'recording.wav', 'w')
@@ -536,7 +537,7 @@ def start():
 				if audioplaying: p.stop()
 				start = time.time()
 				record_audio = True
-				play_audio(path+'alexayes.mp3', 0)
+				play_audio(resources_path+'alexayes.mp3', 0)
 			elif button_pressed:
 				if audioplaying: p.stop()
 				record_audio = True
@@ -584,7 +585,7 @@ def setup():
 		GPIO.output(plb_light, GPIO.HIGH)
 		time.sleep(.1)
 		GPIO.output(plb_light, GPIO.LOW)
-	if (silent == False): play_audio(path+"hello.mp3")
+	if (silent == False): play_audio(resources_path+"hello.mp3")
 
 
 if __name__ == "__main__":

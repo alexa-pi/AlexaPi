@@ -39,9 +39,9 @@ git clone https://github.com/cmusphinx/pocketsphinx.git
 
 cd $cwd
 
-wget --output-document vlc.py "http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=generated/vlc.py;hb=HEAD"
+wget --output-document ../vlc.py "http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=generated/vlc.py;hb=HEAD"
 apt-get install python-dev swig libasound2-dev memcached python-pip python-alsaaudio vlc libpulse-dev -y
-pip install -r requirements.txt
+pip install -r ../requirements.txt
 touch /var/log/alexa.log
 
 case $shairport in
@@ -75,6 +75,8 @@ esac
 
 update-rc.d AlexaPi defaults
 
+cd ..
+
 echo "--Creating creds.py--"
 echo "Enter your Device Type ID:"
 read productid
@@ -96,4 +98,4 @@ echo "Enter your Client Secret:"
 read secret
 echo Client_Secret = \"$secret\" >> creds.py
 
-python ./auth_web.py 
+python ./auth_web.py
