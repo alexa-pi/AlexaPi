@@ -12,15 +12,14 @@ CONFIG_FILENAME="config.yaml"
 CONFIG_FILE_SYSTEM="${CONFIG_SYSTEM_DIRECTORY}/${CONFIG_FILENAME}"
 CONFIG_FILE_LOCAL="./${CONFIG_FILENAME}"
 
+RUN_USER="alexapi"
+
 if [ "$EUID" -ne 0 ]
 	then echo "Please run as root"
 	exit
 fi
 
-CORRECT_INSTALL_PATH=true
 if [ "$ALEXASRC_DIRECTORY" != "$ALEXASRC_DIRECTORY_CORRECT" ]; then
-
-    CORRECT_INSTALL_PATH=false
 
     echo "You haven't downloaded AlexaPi into /opt. As a result of that, you won't be able to run AlexaPi on boot."
     echo "If you wish to be able to run AlexaPi on boot, please interrupt this script and download into /opt."
@@ -37,34 +36,77 @@ if [ "$ALEXASRC_DIRECTORY" != "$ALEXASRC_DIRECTORY_CORRECT" ]; then
                 exit
             ;;
     esac
-fi
 
-cd $SCRIPT_DIRECTORY
-chmod +x *.sh
+else
+
+    echo "Do you want AlexaPi to run on boot?"
+	echo "You have these options: "
+	echo "0 - NO"
+	echo "1 - yes, use systemd (default, RECOMMENDED and awesome)"
+	echo "2 - yes, use a classic init script (for a very old PC or an embedded system)"
+	read -p "Which option do you prefer? [hit Enter for 1]: " init_type
+
+    if [ "${init_type// /}" != "0" ]; then
+
+        if [ "${init_type}" == "" ]; then
+            init_type="1"
+        fi
+
+        read -p "Would you like to have AlexaPi restart when it crashes? (y/N)? " monitorAlexa
+
+        echo -n "Creating a user to run AlexaPi under ... "
+        UID_TEST=`id -u $RUN_USER >/dev/null 2>&1`
+        UID_TEST="$?"
+
+        if [ $UID_TEST -eq 0 ]; then
+            echo "user already exists. That's cool - using that."
+        else
+            useradd --system --user-group $RUN_USER 2>/dev/null
+            gpasswd -a $RUN_USER gpio > /dev/null
+            gpasswd -a $RUN_USER audio > /dev/null
+            if [ "$?" -eq "0" ]; then
+                echo "done."
+            else
+                echo "unknown error. useradd returned code $?."
+            fi
+        fi
+
+        cd $SCRIPT_DIRECTORY
+        chmod +x *.sh
+
+        case $init_type in
+            2 ) # classic
+                install -Dm744 initd_alexa.sh /etc/init.d/AlexaPi
+
+                mkdir -p /etc/opt/AlexaPi
+                touch /etc/opt/AlexaPi/.keep
+                if [ "$monitorAlexa" == "y" ] || [ "$monitorAlexa" == "Y" ]; then
+                    touch /etc/opt/AlexaPi/monitor_enable
+                fi
+
+                touch /var/log/AlexaPi.log
+
+                update-rc.d AlexaPi defaults
+            ;;
+
+            * ) # systemd
+                install -Dm644 ./AlexaPi.service /usr/lib/systemd/system/AlexaPi.service
+                install -Dm644 ./restart.conf /etc/systemd/system/AlexaPi.service.d/restart.conf.disabled
+
+                if [ "$monitorAlexa" == "y" ] || [ "$monitorAlexa" == "Y" ]; then
+                    mv /etc/systemd/system/AlexaPi.service.d/restart.conf.disabled /etc/systemd/system/AlexaPi.service.d/restart.conf
+                fi
+
+                systemctl daemon-reload
+                systemctl enable AlexaPi.service
+            ;;
+        esac
+
+    fi
+
+fi
 
 read -p "Would you like to also install Airplay support (Y/n)? " shairport
-case $shairport in
-        [nN] ) 
-        	echo "shairport-sync (Airplay) will NOT be installed."
-        ;;
-        * )
-        	echo "shairport-sync (Airplay) WILL be installed."
-        ;;
-esac
-
-if [ "$CORRECT_INSTALL_PATH" == true ]; then
-
-    read -p "Would you like to add always-on monitoring (y/N)? " monitorAlexa
-    case $monitorAlexa in
-            [yY] )
-                echo "monitoring WILL be installed."
-            ;;
-            * )
-                echo "monitoring will NOT be installed."
-            ;;
-    esac
-
-fi
 
 apt-get update
 apt-get install wget git -y
@@ -73,8 +115,6 @@ cd $ALEXASRC_DIRECTORY
 wget --output-document ./vlc.py "http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=generated/vlc.py;hb=HEAD"
 apt-get install python-dev swig libasound2-dev memcached python-pip python-alsaaudio vlc libpulse-dev python-yaml -y
 pip install -r ./requirements.txt
-
-touch /var/log/alexa.log
 
 case $shairport in
         [nN] ) ;;
@@ -99,26 +139,10 @@ case $shairport in
         ;;
 esac
 
-if [ "$CORRECT_INSTALL_PATH" == true ]; then
-
-    cd $SCRIPT_DIRECTORY
-    case $monitorAlexa in
-            [yY] )
-            cp initd_alexa_monitored.sh /etc/init.d/AlexaPi
-        ;;
-            * )
-            cp initd_alexa.sh /etc/init.d/AlexaPi
-            ;;
-    esac
-
-    update-rc.d AlexaPi defaults
-
-fi
-
 cd ${ALEXASRC_DIRECTORY}
 echo ""
 
-if [ "$CORRECT_INSTALL_PATH" == true ]; then
+if [ "${ALEXASRC_DIRECTORY}" == "${ALEXASRC_DIRECTORY_CORRECT}" ]; then
     mkdir -p ${CONFIG_SYSTEM_DIRECTORY}
     touch ${CONFIG_SYSTEM_DIRECTORY}/.keep
     CONFIG_FILE="${CONFIG_FILE_SYSTEM}"

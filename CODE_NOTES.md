@@ -1,20 +1,39 @@
-### Always-on monitoring
+## AlexaPi restart on crashes
 
-If you select to install always-on monitoring, the system will re-spawn AlexaPi anytime it crashes.
-This is useful for a stand-alone device, but probably too heavy-handed if you want to use the Pi for anything else.
+**Warning:** If you encounter crashes with AlexaPi, please report them, so we can fix them. **That** is the solution. This feature exists as a last resort when for example the app crashes after several weeks of operation due to some memory leak and there is no obvious way to solve it.
 
-To prevent the re-spawn from happening, add a file called "AlexaPi_dont_start" into the /tmp directory: `touch /tmp/AlexaPi_dont_start`
-This will kill prevent the script from creating a new instance of main.py, and a "kill" command will now truly kill the alexa program.  `rm /tmp/AlexaPi_dont_start` will return to re-spawning.
+### SystemD
+
+This feature is controlled by a systemd unit override file _/etc/systemd/system/AlexaPi.service.d/restart.conf_.
+If you wish to enable it: 
+`sudo mv /etc/systemd/system/AlexaPi.service.d/restart.conf.disabled /etc/systemd/system/AlexaPi.service.d/restart.conf`
+And to disable it: 
+`sudo mv /etc/systemd/system/AlexaPi.service.d/restart.conf /etc/systemd/system/AlexaPi.service.d/restart.conf.disabled`
+
+And `sudo systemctl daemon-reload` for the changes to take effect. 
+
+### Classic init scripts
+
+The feature is controlled by the presence of _/etc/opt/AlexaPi/monitor_enable_.
+If you wish to enable it: `sudo touch /etc/opt/AlexaPi/monitor_enable`
+And to disable it: `sudo rm /etc/opt/AlexaPi/monitor_enable`
+
+#### temporary setting
+
+To prevent the re-spawn from happening, add a file called _monitor_pause_ into the _/run/AlexaPi_ directory. 
+`sudo touch /run/AlexaPi/monitor_pause` will do the job.
+This will prevent the script from creating a new instance of AlexaPi, and a `kill` command will now truly kill the alexa program. 
+`sudo rm /run/AlexaPi/monitor_pause` will return to re-spawning.
 
 After a reboot, AlexaPi will be restarted and re-spawned as usual.
 
-### A note on Shairport-sync
+## A note on Shairport-sync
 
 By default, shairport-sync (the airplay client) uses port 5000.  This is no problem if everything goes as planned, but AlexaPi's authorization on sammachin's design uses port 5000 as well, and if shairport-sync is running while that happens, everything fails.
 
 As a result, I have changed the authorization port for AlexaPi to 5050.  Note that you will have to change the settings within the developer website for this to work.
 
-### Configuration
+## Configuration
 
 Configuration of AlexaPi is stored in a file called _config.yaml_, which as the extension suggests uses the [YAML](http://yaml.org/) format. AlexaPi looks for this file in several locations:
 - _/etc/opt/AlexaPi_
@@ -22,7 +41,7 @@ Configuration of AlexaPi is stored in a file called _config.yaml_, which as the 
 
 The last existing file in this ordered list will be used. That means normally _/etc/opt/AlexaPi/config.yml_ is used, but if you create _config.yaml_ in the latter paths, it will be used instead. 
 
-### Advanced Install
+## Advanced Install
 
 For those of you that prefer to install the code manually or tweak things here's a few pointers...
 

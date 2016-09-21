@@ -1,0 +1,25 @@
+[Unit]
+Description=Alexa client for all your devices
+Documentation=https://github.com/alexa-pi/AlexaPi
+
+# Having network in "Wants" is intentional, because we want AlexaPi to start even when network is not available.
+# For example if there is a power loss and the device reboots, but the internet connection is not fixed yet
+# and there are timers / alarms, we want to handle them.
+Wants=network.target network-online.target
+Requires=sound.target
+After=network.target network-online.target sound.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python /opt/AlexaPi/src/main.py
+
+User=alexapi
+Group=alexapi
+
+ProtectHome=true
+RuntimeDirectory=AlexaPi
+RuntimeDirectoryMode=0770
+WorkingDirectory=/run/AlexaPi
+
+[Install]
+WantedBy=default.target

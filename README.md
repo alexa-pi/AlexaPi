@@ -72,7 +72,7 @@ Enjoy :)
 
 ## Issues/Bugs etc.
 
-If your alexa isn't running on startup you can check /var/log/alexa.log for errrors.
+If your AlexaPi isn't running on startup you can check the log for errors. If you're on systemd, run `sudo journalctl -u AlexaPi.service`, if you've stuck to the classic, run `sudo less /var/log/AlexaPi.log`.
 
 If the error is complaining about alsaaudio you may need to check the name of your soundcard input device, use 
 `arecord -L` 
