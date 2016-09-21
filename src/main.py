@@ -1,6 +1,9 @@
 #! /usr/bin/env python
 
 import os
+import tempfile
+import signal
+import shutil
 import random
 import time
 import RPi.GPIO as GPIO
@@ -24,6 +27,7 @@ import datetime
 import tunein
 import webrtcvad
 
+from pocketsphinx import get_model_path
 from pocketsphinx.pocketsphinx import *
 from sphinxbase.sphinxbase import *
 
@@ -58,21 +62,18 @@ recorded = False
 servers = ["127.0.0.1:11211"]
 mc = Client(servers, debug=1)
 path = os.path.realpath(__file__).rstrip(os.path.basename(__file__))
-resources_path = path + '/resources/'
+resources_path = os.path.join(path, 'resources', '')
+tmp_path = os.path.join(tempfile.mkdtemp(prefix='AlexaPi-runtime-'), '')
 
 #Sphinx setup
 trigger_phrase = "alexa"
-
-sphinx_data_path = "/root/pocketsphinx/"
-modeldir = sphinx_data_path+"/model/"
-datadir = sphinx_data_path+"/test/data"
 
 # PocketSphinx configuration
 config = Decoder.default_config()
 
 # Set recognition model to US
-config.set_string('-hmm', os.path.join(modeldir, 'en-us/en-us'))
-config.set_string('-dict', os.path.join(modeldir, 'en-us/cmudict-en-us.dict'))
+config.set_string('-hmm', os.path.join(get_model_path(), 'en-us'))
+config.set_string('-dict', os.path.join(get_model_path(), 'cmudict-en-us.dict'))
 
 #Specify recognition key phrase
 config.set_string('-keyphrase', trigger_phrase)
@@ -169,7 +170,7 @@ def alexa_speech_recognizer():
 			"format": "audio/L16; rate=16000; channels=1"
 		}
 	}
-	with open(path+'recording.wav') as inf:
+	with open(tmp_path + 'recording.wav') as inf:
 		files = [
 				('file', ('request', json.dumps(d), 'application/json; charset=UTF-8')),
 				('file', ('audio', inf, 'audio/L16; rate=16000; channels=1'))
@@ -253,7 +254,7 @@ def process_response(r):
 				j =  json.loads(payload.get_payload())
 				if debug: print("{}JSON String Returned:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, json.dumps(j)))
 			elif payload.get_content_type() == "audio/mpeg":
-				filename = path + "tmpcontent/"+payload.get('Content-ID').strip("<>")+".mp3" 
+				filename = tmp_path + payload.get('Content-ID').strip("<>")+".mp3"
 				with open(filename, 'wb') as f:
 					f.write(payload.get_payload())
 			else:
@@ -268,7 +269,7 @@ def process_response(r):
 				if directive['namespace'] == 'SpeechSynthesizer':
 					if directive['name'] == 'speak':
 						GPIO.output(rec_light, GPIO.LOW)
-						play_audio(path + "tmpcontent/"+directive['payload']['audioContent'].lstrip("cid:")+".mp3")
+						play_audio(tmp_path + directive['payload']['audioContent'].lstrip("cid:")+".mp3")
 					for directive in j['messageBody']['directives']: # if Alexa expects a response
 						if directive['namespace'] == 'SpeechRecognizer': # this is included in the same string as above if a response was expected
 							if directive['name'] == 'listen':
@@ -288,7 +289,7 @@ def process_response(r):
 								streamid = stream['streamId']
 								playBehavior = directive['payload']['playBehavior']
 							if stream['streamUrl'].startswith("cid:"):
-								content = path + "tmpcontent/"+stream['streamUrl'].lstrip("cid:")+".mp3"
+								content = tmp_path + stream['streamUrl'].lstrip("cid:")+".mp3"
 							else:
 								content = stream['streamUrl']
 							pThread = threading.Thread(target=play_audio, args=(content, stream['offsetInMilliseconds']))
@@ -316,7 +317,7 @@ def process_response(r):
 				if stream['progressReportRequired']:
 					streamid = stream['streamId']
 				if stream['streamUrl'].startswith("cid:"):
-					content = path + "tmpcontent/"+stream['streamUrl'].lstrip("cid:")+".mp3"
+					content = tmp_path + stream['streamUrl'].lstrip("cid:")+".mp3"
 				else:
 					content = stream['streamUrl']
 				pThread = threading.Thread(target=play_audio, args=(content, stream['offsetInMilliseconds']))
@@ -500,7 +501,7 @@ def silence_listener(throwaway_frames):
 		# if debug: play_audio(resources_path+'beep.wav', 0, 100)
 
 		GPIO.output(rec_light, GPIO.LOW)
-		rf = open(path+'recording.wav', 'w')
+		rf = open(tmp_path + 'recording.wav', 'w')
 		rf.write(audio)
 		rf.close()
 		inp.close()
@@ -549,7 +550,14 @@ def start():
 		inp.close()
 
 		# clean up the temp directory
-		if debug == False: os.system("rm /root/AlexaPi/tmpcontent/*")
+		if debug == False:
+			for file in os.listdir(tmp_path):
+				file_path = os.path.join(tmp_path, file)
+				try:
+					if os.path.isfile(file_path):
+						os.remove(file_path)
+				except Exception as e:
+					print(e)
 
 		if debug: print "Starting to listen..."
 		silence_listener(VAD_THROWAWAY_FRAMES)
@@ -562,8 +570,15 @@ def start():
 		decoder.start_utt()
 
 
+def cleanup(signal, frame):
+	shutil.rmtree(tmp_path)
+	sys.exit(0)
+
 
 def setup():
+	for sig in (signal.SIGABRT, signal.SIGILL, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
+		signal.signal(sig, cleanup)
+
 	GPIO.setwarnings(False)
 	GPIO.cleanup()
 	GPIO.setmode(GPIO.BCM)

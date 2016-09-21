@@ -6,6 +6,6 @@ CherryPy>=4.0.0
 python-vlc>=1.1.2
 pyalsaaudio>=0.8.2
 py-getch>=1.0.1
-pocketsphinx>=0.1.0
+pocketsphinx>=0.1.3
 webrtcvad>=2.0.7
 

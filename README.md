@@ -35,8 +35,6 @@ Next you need to obtain a set of credentials from Amazon to use the Alexa Voice 
 
 ## Installation
 
-**NOTE:** This is outdated and due to change!
-
 1. Boot your PC and login to a command prompt.
 2. Make sure you are in `/opt` by issuing
 
@@ -47,18 +45,20 @@ Next you need to obtain a set of credentials from Amazon to use the Alexa Voice 
 3. Clone this repo
     
     ```
-    git clone https://github.com/alexa-pi/AlexaPi.git
+    sudo git clone https://github.com/alexa-pi/AlexaPi.git
     ```
         
 4. Run the setup script
 
     ```
-    sudo ./setup.sh
+    sudo ./AlexaPi/src/scripts/setup.sh
     ```
 
 Follow instructions...
 
 Enjoy :)
+
+**NOTE:** You can also clone the repository to any other directory (and lose the `sudo` for the second command, if you have permission to write to that directory), but you won't be able to run AlexaPi on boot with our init scripts. It is therefore recommended for advanced users (who know what they're doing) only.
 
 ## Issues/Bugs etc.
 

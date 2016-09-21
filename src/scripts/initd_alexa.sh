@@ -15,7 +15,7 @@ case "$1" in
 
 start)
     echo "Starting Alexa..."
-    python /root/AlexaPi/src/main.py &
+    python /opt/AlexaPi/src/main.py &
 
 ;;
 

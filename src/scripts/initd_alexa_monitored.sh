@@ -15,13 +15,13 @@ case "$1" in
 
 start)
     echo "Starting Alexa..."
-    python /root/AlexaPi/src/main.py &
-    /root/AlexaPi/src/scripts/monitorAlexa.sh &
+    python /opt/AlexaPi/src/main.py &
+    /opt/AlexaPi/src/scripts/monitorAlexa.sh &
 ;;
 
 silent)
     echo "Starting Alexa in silent mode..."
-    python /root/AlexaPi/src/main.py -s &
+    python /opt/AlexaPi/src/main.py -s &
 ;;
 
 stop)
