@@ -7,6 +7,10 @@ popd > /dev/null
 SCRIPT_DIRECTORY=$ALEXASRC_DIRECTORY/scripts
 TMP_DIR="/tmp"
 ALEXASRC_DIRECTORY_CORRECT="/opt/AlexaPi/src"
+CONFIG_SYSTEM_DIRECTORY="/etc/opt/AlexaPi"
+CONFIG_FILENAME="config.yaml"
+CONFIG_FILE_SYSTEM="${CONFIG_SYSTEM_DIRECTORY}/${CONFIG_FILENAME}"
+CONFIG_FILE_LOCAL="./${CONFIG_FILENAME}"
 
 if [ "$EUID" -ne 0 ]
 	then echo "Please run as root"
@@ -67,7 +71,7 @@ apt-get install wget git -y
 
 cd $ALEXASRC_DIRECTORY
 wget --output-document ./vlc.py "http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=generated/vlc.py;hb=HEAD"
-apt-get install python-dev swig libasound2-dev memcached python-pip python-alsaaudio vlc libpulse-dev -y
+apt-get install python-dev swig libasound2-dev memcached python-pip python-alsaaudio vlc libpulse-dev python-yaml -y
 pip install -r ./requirements.txt
 
 touch /var/log/alexa.log
@@ -111,27 +115,88 @@ if [ "$CORRECT_INSTALL_PATH" == true ]; then
 
 fi
 
-cd $ALEXASRC_DIRECTORY
+cd ${ALEXASRC_DIRECTORY}
+echo ""
 
-echo "--Creating creds.py--"
-echo "Enter your Device Type ID:"
-read productid
-echo ProductID = \"$productid\" > creds.py
+if [ "$CORRECT_INSTALL_PATH" == true ]; then
+    mkdir -p ${CONFIG_SYSTEM_DIRECTORY}
+    touch ${CONFIG_SYSTEM_DIRECTORY}/.keep
+    CONFIG_FILE="${CONFIG_FILE_SYSTEM}"
 
-echo "Enter your Security Profile Description:"
-read spd
-echo Security_Profile_Description = \"$spd\" >> creds.py
+    if [ -f ${CONFIG_FILE_LOCAL} ]; then
+        echo "WARNING: You are installing AlexaPi into system path (${ALEXASRC_DIRECTORY_CORRECT}), but local configuration file (${CONFIG_FILE_LOCAL}) exists and it will shadow the system one (the local will be used instead of the system one, which is ${CONFIG_FILE_SYSTEM}). If this is not what you want, rename, move or delete the local configuration."
+    fi
+else
+    CONFIG_FILE="${CONFIG_FILE_LOCAL}"
+fi
 
-echo "Enter your Security Profile ID:"
-read spid
-echo Security_Profile_ID = \"$spid\" >> creds.py
+config_action=2
+if [ -f $CONFIG_FILE ]; then
+    echo "Configuration file $CONFIG_FILE exists already. What do you want to do?"
+    echo "[0] Keep and use current configuration file."
+    echo "[1] Edit existing configuration file."
+    echo "[2] Delete the configuration file and start with a fresh one."
+	read -p "Which option do you prefer? [hit Enter for 0]: " config_action
+fi
 
-echo "Enter your Client ID:"
-read cid
-echo Client_ID = \"$cid\" >> creds.py
+declare -A config_defaults
+config_defaults[DeviceTypeID]=""
+config_defaults[SecurityProfileDescription]=""
+config_defaults[SecurityProfileID]=""
+config_defaults[ClientID]=""
+config_defaults[ClientSecret]=""
 
-echo "Enter your Client Secret:"
-read secret
-echo Client_Secret = \"$secret\" >> creds.py
+case ${config_action} in
+
+    1)
+        echo "Editing existing configuration file ..."
+        echo "Hit Enter to fill in the current value (in brackets)."
+
+        config_defaults[DeviceTypeID]="`grep -o -P "(?<=ProductID:).*" ${CONFIG_FILE} | sed 's/^ *//;s/ *$//;s/"//g'`"
+        config_defaults[SecurityProfileDescription]="`grep -o -P "(?<=Security_Profile_Description:).*" ${CONFIG_FILE} | sed 's/^ *//;s/ *$//;s/"//g'`"
+        config_defaults[SecurityProfileID]="`grep -o -P "(?<=Security_Profile_ID:).*" ${CONFIG_FILE} | sed 's/^ *//;s/ *$//;s/"//g'`"
+        config_defaults[ClientID]="`grep -o -P "(?<=Client_ID:).*" ${CONFIG_FILE} | sed 's/^ *//;s/ *$//;s/"//g'`"
+        config_defaults[ClientSecret]="`grep -o -P "(?<=Client_Secret:).*" ${CONFIG_FILE} | sed 's/^ *//;s/ *$//;s/"//g'`"
+    ;;
+    2)
+        echo "Creating configuration file ${CONFIG_FILE} ..."
+        cp config.template.yaml ${CONFIG_FILE}
+    ;;
+    *)
+        echo "Exiting ..."
+        exit
+    ;;
+
+esac
+
+read -p "Enter your Device Type ID [${config_defaults[DeviceTypeID]}]: " DeviceTypeID
+if [ "${DeviceTypeID}" == "" ]; then
+    DeviceTypeID="${config_defaults[DeviceTypeID]}"
+fi
+sed -i -e 's/ProductID.*/ProductID: "'"${DeviceTypeID}"'"/g' $CONFIG_FILE
+
+read -p "Enter your Security Profile Description [${config_defaults[SecurityProfileDescription]}]: " SecurityProfileDescription
+if [ "${SecurityProfileDescription}" == "" ]; then
+    SecurityProfileDescription="${config_defaults[SecurityProfileDescription]}"
+fi
+sed -i -e 's/Security_Profile_Description.*/Security_Profile_Description: "'"${SecurityProfileDescription}"'"/g' $CONFIG_FILE
+
+read -p "Enter your Security Profile ID [${config_defaults[SecurityProfileID]}]: " SecurityProfileID
+if [ "${SecurityProfileID}" == "" ]; then
+    SecurityProfileID="${config_defaults[SecurityProfileID]}"
+fi
+sed -i -e 's/Security_Profile_ID.*/Security_Profile_ID: "'"${SecurityProfileID}"'"/g' $CONFIG_FILE
+
+read -p "Enter your Client ID [${config_defaults[ClientID]}]: " ClientID
+if [ "${ClientID}" == "" ]; then
+    ClientID="${config_defaults[ClientID]}"
+fi
+sed -i -e 's/Client_ID.*/Client_ID: "'"${ClientID}"'"/g' $CONFIG_FILE
+
+read -p "Enter your Client Secret [${config_defaults[ClientSecret]}]: " ClientSecret
+if [ "${ClientSecret}" == "" ]; then
+    ClientSecret="${config_defaults[ClientSecret]}"
+fi
+sed -i -e 's/Client_Secret.*/Client_Secret: "'"${ClientSecret}"'"/g' $CONFIG_FILE
 
 python ./auth_web.py

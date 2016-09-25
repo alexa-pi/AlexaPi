@@ -76,7 +76,7 @@ If your alexa isn't running on startup you can check /var/log/alexa.log for errr
 
 If the error is complaining about alsaaudio you may need to check the name of your soundcard input device, use 
 `arecord -L` 
-The device name can be set in the settings at the top of main.py 
+The device name can be set in the configuration file. If you installed into _/opt_ as recommended, it is _/etc/opt/AlexaPi/config.yaml_. If you installed elsewhere, the file _config.yaml_ is in your _AlexaPi/src_ directory. 
 
 You may need to adjust the volume and/or input gain for the microphone, you can do this with 
 `alsamixer`

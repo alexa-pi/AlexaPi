@@ -1,20 +1,25 @@
 #! /usr/bin/env python
 
+import yaml
 import cherrypy
 import os
 from cherrypy.process import servers
 import requests
 import json
-from creds import *
 import urllib
 import socket
+
+import alexapi.config
+
+with open(alexapi.config.filename, 'r') as stream:
+	config = yaml.load(stream)
 
 class Start(object):
 	def index(self):
 		scope="alexa_all"
 		sd = json.dumps({
 		    "alexa:all": {
-		        "productID": ProductID,
+		        "productID": config['alexa']['ProductID'],
 		        "productInstanceAttributes": {
 		            "deviceSerialNumber": "001"
 		        }
@@ -22,21 +27,21 @@ class Start(object):
 		})
 		url = "https://www.amazon.com/ap/oa"
 		callback = cherrypy.url()  + "code" 
-		payload = {"client_id" : Client_ID, "scope" : "alexa:all", "scope_data" : sd, "response_type" : "code", "redirect_uri" : callback }
+		payload = {"client_id" : config['alexa']['Client_ID'], "scope" : "alexa:all", "scope_data" : sd, "response_type" : "code", "redirect_uri" : callback }
 		req = requests.Request('GET', url, params=payload)
 		p = req.prepare()
 		raise cherrypy.HTTPRedirect(p.url)
 	def code(self, var=None, **params):
 		code = urllib.quote(cherrypy.request.params['code'])
 		callback = cherrypy.url()
-		payload = {"client_id" : Client_ID, "client_secret" : Client_Secret, "code" : code, "grant_type" : "authorization_code", "redirect_uri" : callback }
+		payload = {"client_id" : config['alexa']['Client_ID'], "client_secret" : config['alexa']['Client_Secret'], "code" : code, "grant_type" : "authorization_code", "redirect_uri" : callback }
 		url = "https://api.amazon.com/auth/o2/token"
 		r = requests.post(url, data = payload)
 		resp = r.json()
-		line = 'refresh_token = "{}"'.format(resp['refresh_token'])
-		with open("creds.py", 'a') as f:
-			f.write(line)
-		return "<h2>Success!</h2><h3> Refresh token has been added to your creds file, you may now reboot the Pi </h3><br>{}".format(resp['refresh_token'])
+
+		alexapi.config.set_variable(['alexa', 'refresh_token'], resp['refresh_token'])
+
+		return "<h2>Success!</h2><h3> Refresh token has been added to your config file, you may now reboot the Pi </h3><br>{}".format(resp['refresh_token'])
 	index.exposed = True
 	code.exposed = True
 		

@@ -1,7 +1,6 @@
 *__pycache__*
 *.pyc
 
-creds*
-src/creds*
+src/config.yaml
 
 .idea

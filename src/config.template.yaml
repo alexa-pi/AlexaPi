@@ -1,0 +1,28 @@
+# Rename this file to config.yaml and fill in the fields
+
+sound:
+  # Name of your microphone/soundcard in arecord -L
+  # you can also try setting it to 'default'
+  device: "plughw:1"
+
+# Amazon Alexa settings
+alexa:
+  Client_ID:
+  Client_Secret:
+  ProductID:
+  Security_Profile_Description:
+  Security_Profile_ID:
+  refresh_token:
+
+sphinx:
+  trigger_phrase: alexa
+
+raspberrypi:
+  # GPIO Pin with button connected
+  button: 18
+  # GPIO Pin for the playback/activity light
+  plb_light: &plb_light 24
+  # GPIO Pin for the recording light
+  rec_light: &rec_light 25
+  # GPIO Pins with LED's connected
+  lights: [*plb_light, *rec_light]

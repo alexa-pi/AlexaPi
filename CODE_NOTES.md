@@ -14,11 +14,19 @@ By default, shairport-sync (the airplay client) uses port 5000.  This is no prob
 
 As a result, I have changed the authorization port for AlexaPi to 5050.  Note that you will have to change the settings within the developer website for this to work.
 
+### Configuration
+
+Configuration of AlexaPi is stored in a file called _config.yaml_, which as the extension suggests uses the [YAML](http://yaml.org/) format. AlexaPi looks for this file in several locations:
+- _/etc/opt/AlexaPi_
+- the _src_ subdirectory of _AlexaPi_ installation (_AlexaPi/src_)
+
+The last existing file in this ordered list will be used. That means normally _/etc/opt/AlexaPi/config.yml_ is used, but if you create _config.yaml_ in the latter paths, it will be used instead. 
+
 ### Advanced Install
 
 For those of you that prefer to install the code manually or tweak things here's a few pointers...
 
-The Amazon AVS credentials are stored in a file called creds.py which is used by auth_web.py and main.py, there is an example with blank values.
+The Amazon AVS credentials are stored in the configuration file called config.yaml which is used by auth_web.py and main.py, there is a template with blank values.
 
 The auth_web.py is a simple web server to generate the refresh token via oAuth to the amazon users account, it then appends this to creds.py and displays it on the browser.
 
