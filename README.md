@@ -5,7 +5,7 @@ This is a client for Amazon's Alexa service. It is intended and tested to run on
 ### NOTE: This is a new generation of the project under heavy development. It is eventually gonna be more awesome than ever! Please bear with us while we stabilize the new code base.
 
 ### Do you want to help out? Read the [Contribution Guide](CONTRIBUTING.md).
-### If you're interested in the things under the hood, check out the [Code Notes](CODE NOTES.md).
+### If you're interested in the things under the hood, check out the [Code Notes](CODE_NOTES.md).
 
 ## Requirements
 
@@ -27,11 +27,21 @@ You will need:
 * (optional) (Raspberry Pi) a dual colour LED (or 2 signle LEDs) connected to GPIO 24 & 25
 
 
-Next you need to obtain a set of credentials from Amazon to use the Alexa Voice service.
+Next you need to obtain a set of credentials from Amazon to use the Alexa Voice service. Make a note of these credentials as you will be asked for them during the install process.
 
-- Login at `http://developer.amazon.com` and go to `Alexa`, then `Alexa Voice Service`.
-- You need to create a new product type as a `Device`. For the ID use something like _AlexaPi_. Create a new security profile and under the `Web Settings`, there is `Allowed Origins` - put there `http://localhost:5050` and as `Allowed Return URLs` put `http://localhost:5050/code`. You can also create URLs replacing `localhost` with the IP of your box e.g. `http://192.168.1.123:5050`.
-- Make a note of these credentials you will be asked for them during the install process
+- Login at [https://developer.amazon.com](https://developer.amazon.com) and go to `ALEXA`, then `Alexa Voice Service`.
+- `Register a Product Type` > `Device`. 
+- You are at `Device Type Info` left tab.
+    - For the `Device Type ID` and `Display Name` use something like _AlexaPi_ or whatever you want.
+     - `Next`
+- You are at `Security Profile` left tab.
+    - From the drop-down menu choose `Create a new profile`. 
+    - Choose whatever for `Security Profile Name` and `Security Profile Description`. Hit `Next`.
+    - Under `Web Settings` horizontal tab hit `Edit` and: 
+        - `Allowed Origins` - put there `http://localhost:5050` and `http://ALEXA.DEVICE.IP.ADDRESS:5050` 
+        - `Allowed Return URLs` put `http://localhost:5050/code` and `http://ALEXA.DEVICE.IP.ADDRESS:5050/code`. 
+        You have to replace `ALEXA.DEVICE.IP.ADDRESS` with the IP (for example 192.168.1.123) of your AlexaPi device (for example Raspberry Pi). This is especially necessary when you are installing from another computer than AlexaPi is gonna run on.
+- Fill some of the other stuff in.
 
 ## Installation
 
