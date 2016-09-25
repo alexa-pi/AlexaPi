@@ -1,0 +1,20 @@
+language: python
+python:
+  - "2.7"
+#  - "3.4"
+#  - "3.5"
+
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -y wget git swig libasound2-dev python-alsaaudio vlc libpulse-dev
+
+install:
+  - pip install -r src/requirements.txt
+  - pip install git+https://github.com/renekliment/fakeRPiGPIO.git@missing
+  - pip install pylint
+  - wget --output-document ./src/vlc.py "http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=generated/vlc.py;hb=HEAD"
+  - cp src/config.template.yaml src/config.yaml
+
+script: 
+  - pylint --errors-only --extension-pkg-whitelist=alsaaudio src/main.py
+  - pylint --errors-only src/auth_web.py
