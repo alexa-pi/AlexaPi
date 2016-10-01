@@ -264,7 +264,7 @@ def process_response(r):
 				if directive['namespace'] == 'SpeechSynthesizer':
 					if directive['name'] == 'speak':
 						GPIO.output(config['raspberrypi']['rec_light'], GPIO.LOW)
-						play_audio(tmp_path + directive['payload']['audioContent'].lstrip("cid:")+".mp3")
+						play_audio("file://" + tmp_path + directive['payload']['audioContent'].lstrip("cid:")+".mp3")
 					for directive in j['messageBody']['directives']: # if Alexa expects a response
 						if directive['namespace'] == 'SpeechRecognizer': # this is included in the same string as above if a response was expected
 							if directive['name'] == 'listen':
@@ -284,7 +284,7 @@ def process_response(r):
 								streamid = stream['streamId']
 								playBehavior = directive['payload']['playBehavior']
 							if stream['streamUrl'].startswith("cid:"):
-								content = tmp_path + stream['streamUrl'].lstrip("cid:")+".mp3"
+								content = "file://" + tmp_path + stream['streamUrl'].lstrip("cid:")+".mp3"
 							else:
 								content = stream['streamUrl']
 							pThread = threading.Thread(target=play_audio, args=(content, stream['offsetInMilliseconds']))
@@ -312,7 +312,7 @@ def process_response(r):
 				if stream['progressReportRequired']:
 					streamid = stream['streamId']
 				if stream['streamUrl'].startswith("cid:"):
-					content = tmp_path + stream['streamUrl'].lstrip("cid:")+".mp3"
+					content = "file://" + tmp_path + stream['streamUrl'].lstrip("cid:")+".mp3"
 				else:
 					content = stream['streamUrl']
 				pThread = threading.Thread(target=play_audio, args=(content, stream['offsetInMilliseconds']))
