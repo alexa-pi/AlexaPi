@@ -82,7 +82,7 @@ decoder = Decoder(ps_config)
 decoder.start_utt()
 
 #Variables
-p = ""
+p = None
 nav_token = ""
 streamurl = ""
 streamid = ""
@@ -502,7 +502,7 @@ def silence_listener(throwaway_frames):
 		inp.close()
 		
 
-def start():
+def loop():
 	global audioplaying, p, vad, button_pressed
 	GPIO.add_event_detect(config['raspberrypi']['button'], GPIO.FALLING, callback=detect_button, bouncetime=100) # threaded detection of button press
 	while True:
@@ -600,4 +600,4 @@ def setup():
 
 if __name__ == "__main__":
 	setup()
-	start()
+	loop()
