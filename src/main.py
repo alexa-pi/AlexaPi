@@ -1,13 +1,13 @@
 #! /usr/bin/env python
 
 import yaml
+import importlib
 import os
 import tempfile
 import signal
 import shutil
 import random
 import time
-import RPi.GPIO as GPIO
 import alsaaudio
 import wave
 import requests
@@ -32,6 +32,7 @@ from pocketsphinx.pocketsphinx import *
 from sphinxbase.sphinxbase import *
 
 import alexapi.config
+import alexapi.bcolors as bcolors
 
 with open(alexapi.config.filename, 'r') as stream:
 	config = yaml.load(stream)
@@ -54,6 +55,18 @@ parser.add_option('-d', '--debug',
 cmdopts, cmdargs = parser.parse_args()
 silent = cmdopts.silent
 debug = cmdopts.debug
+
+if 'debug' not in config:
+	config['debug'] = debug
+
+try:
+	im = importlib.import_module('alexapi.device_platforms.' + config['platform']['device'], package=None)
+	cl = getattr(im, config['platform']['device'].capitalize() + 'Platform')
+	platform = cl(config)
+except ImportError:
+	from alexapi.device_platforms.desktop import DesktopPlatform
+	platform = DesktopPlatform(config)
+
 
 #Setup
 recorded = False
@@ -88,8 +101,6 @@ streamurl = ""
 streamid = ""
 position = 0
 audioplaying = False
-button_pressed = False
-start = time.time()
 tunein_parser = tunein.TuneIn(5000)
 vad = webrtcvad.Vad(2)
 currVolume = 100
@@ -103,16 +114,6 @@ VAD_THROWAWAY_FRAMES = 10
 MAX_RECORDING_LENGTH = 8 
 MAX_VOLUME = 100
 MIN_VOLUME = 30
-
-class bcolors:
-	HEADER = '\033[95m'
-	OKBLUE = '\033[94m'
-	OKGREEN = '\033[92m'
-	WARNING = '\033[93m'
-	FAIL = '\033[91m'
-	ENDC = '\033[0m'
-	BOLD = '\033[1m'
-	UNDERLINE = '\033[4m'
 
 def internet_on():
 	print("Checking Internet Connection...")
@@ -142,7 +143,7 @@ def gettoken():
 def alexa_speech_recognizer():
 	# https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/rest/speechrecognizer-requests
 	if debug: print("{}Sending Speech Request...{}".format(bcolors.OKBLUE, bcolors.ENDC))
-	# GPIO.output(config['raspberrypi']['plb_light'], GPIO.HIGH)
+	# platform.indicate_playback()
 	url = 'https://access-alexa-na.amazon.com/v1/avs/speechrecognizer/recognize'
 	headers = {'Authorization' : 'Bearer %s' % gettoken()}
 	d = {
@@ -179,7 +180,7 @@ def alexa_getnextitem(nav_token):
 	time.sleep(0.5)
         if audioplaying == False:
 		if debug: print("{}Sending GetNextItem Request...{}".format(bcolors.OKBLUE, bcolors.ENDC))
-		# GPIO.output(config['raspberrypi']['plb_light'], GPIO.HIGH)
+		# platform.indicate_playback()
 		url = 'https://access-alexa-na.amazon.com/v1/avs/audioplayer/getNextItem'
 		headers = {'Authorization' : 'Bearer %s' % gettoken(), 'content-type' : 'application/json; charset=UTF-8'}
 		d = {
@@ -258,12 +259,12 @@ def process_response(r):
 		if 'directives' in j['messageBody']:
 			if len(j['messageBody']['directives']) == 0:
 				if debug: print("0 Directives received")
-				GPIO.output(config['raspberrypi']['rec_light'], GPIO.LOW)
-				GPIO.output(config['raspberrypi']['plb_light'], GPIO.LOW)
+				platform.indicate_recording(False)
+				platform.indicate_playback(False)
 			for directive in j['messageBody']['directives']:
 				if directive['namespace'] == 'SpeechSynthesizer':
 					if directive['name'] == 'speak':
-						GPIO.output(config['raspberrypi']['rec_light'], GPIO.LOW)
+						platform.indicate_recording(False)
 						play_audio("file://" + tmp_path + directive['payload']['audioContent'].lstrip("cid:")+".mp3")
 					for directive in j['messageBody']['directives']: # if Alexa expects a response
 						if directive['namespace'] == 'SpeechRecognizer': # this is included in the same string as above if a response was expected
@@ -320,22 +321,24 @@ def process_response(r):
 			
 		return
 	elif r.status_code == 204:
-		GPIO.output(config['raspberrypi']['rec_light'], GPIO.LOW)
+		platform.indicate_recording(False)
 		for x in range(0, 3):
 			time.sleep(.2)
-			GPIO.output(config['raspberrypi']['plb_light'], GPIO.HIGH)
+			platform.indicate_playback()
 			time.sleep(.2)
-			GPIO.output(config['raspberrypi']['plb_light'], GPIO.LOW)
+			platform.indicate_playback(False)
 		if debug: print("{}Request Response is null {}(This is OKAY!){}".format(bcolors.OKBLUE, bcolors.OKGREEN, bcolors.ENDC))
 	else:
 		print("{}(process_response Error){} Status Code: {}".format(bcolors.WARNING, bcolors.ENDC, r.status_code))
 		r.connection.close()
-		GPIO.output(config['raspberrypi']['lights'], GPIO.LOW)
+
+		platform.indicate_playback(False)
+		platform.indicate_recording(False)
 		for x in range(0, 3):
 			time.sleep(.2)
-			GPIO.output(config['raspberrypi']['rec_light'], GPIO.HIGH)
+			platform.indicate_recording()
 			time.sleep(.2)
-			GPIO.output(config['raspberrypi']['lights'], GPIO.LOW)
+			platform.indicate_recording(False)
 
 
 
@@ -345,7 +348,7 @@ def play_audio(file, offset=0, overRideVolume=0):
 		file = tuneinplaylist(file)
 	global nav_token, p, audioplaying
 	if debug: print("{}Play_Audio Request for:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, file))
-	GPIO.output(config['raspberrypi']['plb_light'], GPIO.HIGH)
+	platform.indicate_playback()
 	i = vlc.Instance('--aout=alsa') # , '--alsa-audio-device=mono', '--file-logging', '--logfile=vlc-log.txt')
 	m = i.media_new(file)
 	p = i.media_player_new()
@@ -363,7 +366,7 @@ def play_audio(file, offset=0, overRideVolume=0):
 	p.play()
 	while audioplaying:
 		continue
-	GPIO.output(config['raspberrypi']['plb_light'], GPIO.LOW)
+	platform.indicate_playback(False)
 
 		
 def tuneinplaylist(url):
@@ -425,25 +428,7 @@ def state_callback(event, player):
 		streamid = ""
 		nav_token = ""
 
-def detect_button(channel):
-        global button_pressed
-        buttonPress = time.time()
-        button_pressed = True
-        if debug: print("{}Button Pressed! Recording...{}".format(bcolors.OKBLUE, bcolors.ENDC))
-        time.sleep(.5) # time for the button input to settle down
-        while (GPIO.input(config['raspberrypi']['button'])==0):
-                button_pressed = True
-                time.sleep(.1)
-                if time.time() - buttonPress > 10: # pressing button for 10 seconds triggers a system halt
-                	play_audio(resources_path+'alexahalt.mp3')
-                	if debug: print("{} -- 10 second putton press.  Shutting down. -- {}".format(bcolors.WARNING, bcolors.ENDC))
-                	os.system("halt")
-        if debug: print("{}Recording Finished.{}".format(bcolors.OKBLUE, bcolors.ENDC))
-        button_pressed = False
-        time.sleep(.5) # more time for the button to settle down
-		
 def silence_listener(throwaway_frames):
-		global button_pressed
 		# Reenable reading microphone raw data
 		inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, config['sound']['device'])
 		inp.setchannels(1)
@@ -467,9 +452,11 @@ def silence_listener(throwaway_frames):
 			if l:
 				audio += data
 				isSpeech = vad.is_speech(data, VAD_SAMPLERATE)
-	
+
+		platform.indicate_recording()
+
 		# now do VAD
-		while button_pressed == True or ((thresholdSilenceMet == False) and ((time.time() - start) < MAX_RECORDING_LENGTH)):
+		while platform.should_record() == True or ((thresholdSilenceMet == False) and ((time.time() - start) < MAX_RECORDING_LENGTH)):
 			l, data = inp.read()
 			if l:
 				audio += data
@@ -489,13 +476,12 @@ def silence_listener(throwaway_frames):
 			# (allow user to speak for total of max recording length if they haven't said anything yet)
 			if (numSilenceRuns != 0) and ((silenceRun * VAD_FRAME_MS) > VAD_SILENCE_TIMEOUT):
 				thresholdSilenceMet = True
-			GPIO.output(config['raspberrypi']['rec_light'], GPIO.HIGH)
 
 		if debug: print ("Debug: End recording")
 
 		# if debug: play_audio(resources_path+'beep.wav', 0, 100)
 
-		GPIO.output(config['raspberrypi']['rec_light'], GPIO.LOW)
+		platform.indicate_recording(False)
 		rf = open(tmp_path + 'recording.wav', 'w')
 		rf.write(audio)
 		rf.close()
@@ -503,8 +489,8 @@ def silence_listener(throwaway_frames):
 		
 
 def loop():
-	global audioplaying, p, vad, button_pressed
-	GPIO.add_event_detect(config['raspberrypi']['button'], GPIO.FALLING, callback=detect_button, bouncetime=100) # threaded detection of button press
+	global audioplaying, p, vad
+
 	while True:
 		record_audio = False
 		
@@ -515,28 +501,30 @@ def loop():
 		inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
 		inp.setperiodsize(1024)
 		audio = ""
-		start = time.time()
 
-                while record_audio == False:
+		while not record_audio:
 
 			time.sleep(.1)
 
+			triggered = False
 			# Process microphone audio via PocketSphinx, listening for trigger word
-			while decoder.hyp() == None and button_pressed == False:
+			while not triggered:
 				# Read from microphone
 				l,buf = inp.read()
 				# Detect if keyword/trigger word was said
 				decoder.process_raw(buf, False, False)
 
-			# if trigger word was said
-			if decoder.hyp() != None:
-				if audioplaying: p.stop()
-				start = time.time()
-				record_audio = True
-				play_audio(resources_path+'alexayes.mp3', 0)
-			elif button_pressed:
-				if audioplaying: p.stop()
-				record_audio = True
+				triggered_by_platform = platform.should_record()
+				triggered_by_voice = decoder.hyp() is not None
+				triggered = triggered_by_platform or triggered_by_voice
+
+			if audioplaying:
+				p.stop()
+
+			record_audio = True
+
+			if triggered_by_voice or (triggered_by_platform and platform.should_confirm_trigger):
+				play_audio(resources_path + 'alexayes.mp3', 0)
 
 		# do the following things if either the button has been pressed or the trigger word has been said
 		if debug: print ("detected the edge, setting up audio")
@@ -565,37 +553,29 @@ def loop():
 		decoder.start_utt()
 
 
-def cleanup(signal, frame):
-	shutil.rmtree(tmp_path)
-	sys.exit(0)
-
-
 def setup():
 	for sig in (signal.SIGABRT, signal.SIGILL, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
 		signal.signal(sig, cleanup)
 
-	GPIO.setwarnings(False)
-	GPIO.cleanup()
-	GPIO.setmode(GPIO.BCM)
-	GPIO.setup(config['raspberrypi']['button'], GPIO.IN, pull_up_down=GPIO.PUD_UP)
-	GPIO.setup(config['raspberrypi']['lights'], GPIO.OUT)
-	GPIO.output(config['raspberrypi']['lights'], GPIO.LOW)
+	platform.setup()
+
 	while internet_on() == False:
 		print(".")
+
 	token = gettoken()
 	if token == False:
-		while True:
-			for x in range(0, 5):
-				time.sleep(.1)
-				GPIO.output(config['raspberrypi']['rec_light'], GPIO.HIGH)
-				time.sleep(.1)
-				GPIO.output(config['raspberrypi']['rec_light'], GPIO.LOW)
-	for x in range(0, 5):
-		time.sleep(.1)
-		GPIO.output(config['raspberrypi']['plb_light'], GPIO.HIGH)
-		time.sleep(.1)
-		GPIO.output(config['raspberrypi']['plb_light'], GPIO.LOW)
+		platform.indicate_setup_failure()
+
+	platform.indicate_setup_success()
+
 	if (silent == False): play_audio(resources_path+"hello.mp3")
+
+	platform.after_setup()
+
+def cleanup(signal, frame):
+	platform.cleanup()
+	shutil.rmtree(tmp_path)
+	sys.exit(0)
 
 
 if __name__ == "__main__":
