@@ -458,15 +458,14 @@ def silence_listener(throwaway_frames):
 		silenceRun = 0
 		start = time.time()
 
+		platform.indicate_recording()
+
 		# do not count first 10 frames when doing VAD
 		while (frames < throwaway_frames): # VAD_THROWAWAY_FRAMES):
 			l, data = inp.read()
 			frames = frames + 1
 			if l:
 				audio += data
-				isSpeech = vad.is_speech(data, VAD_SAMPLERATE)
-
-		platform.indicate_recording()
 
 		# now do VAD
 		while platform.should_record() == True or ((thresholdSilenceMet == False) and ((time.time() - start) < MAX_RECORDING_LENGTH)):
