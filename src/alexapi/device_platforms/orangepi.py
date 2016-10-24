@@ -14,7 +14,8 @@ class OrangepiPlatform(BasePlatform):
 		super(OrangepiPlatform, self).__init__(config)
 
 		self.__config = config
-		self.__pconfig = config['platforms']['orangepi']
+		self.__pconfig = config['platforms']['common']
+		self.__pconfig.update(config['platforms']['orangepi'])
 		self.__pconfig['lights'] = [self.__pconfig['rec_light'], self.__pconfig['plb_light']]
 
 		self.long_press_setup = False

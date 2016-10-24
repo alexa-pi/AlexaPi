@@ -11,7 +11,8 @@ class DesktopPlatform(BasePlatform):
 		super(DesktopPlatform, self).__init__(config)
 
 		self.__config = config
-		self.__pconfig = config['platforms']['desktop']
+		self.__pconfig = config['platforms']['common']
+		self.__pconfig.update(config['platforms']['desktop'])
 
 		self.should_confirm_trigger = self.__pconfig['should_confirm_trigger']
 
