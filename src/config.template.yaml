@@ -18,6 +18,7 @@ sphinx:
   trigger_phrase: "alexa"
 
 platform:
+  # Name of your device, e.g. raspberrypi, orangepi, desktop
   device: "raspberrypi"
 
 platforms:
@@ -53,3 +54,30 @@ platforms:
     should_confirm_trigger: true
 
     min_seconds_to_record: 3
+    
+  orangepi:
+    # GPIO Pin with button connected
+    button: 20
+    # GPIO Pin for the playback/activity light
+    plb_light: 9
+    # GPIO Pin for the recording light
+    rec_light: 8
+
+    # whether you want to hear Alexa's "yes" after you press a button
+    # "true" or "false"
+    should_confirm_trigger: false
+
+    long_press:
+      # system command to run after pressing the button for _duration_ number of seconds
+      # empty to disable
+      command: ""
+
+      # duration in seconds
+      duration: 10
+
+      # CURRENTLY DISABLED
+      # optional audio file to play before executing the command
+      # you might wanna use full path to make sure AlexaPi finds it
+      # you can use {resources_path} for the path to the AlexaPi "resources" directory
+      audio_file: ""
+

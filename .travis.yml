@@ -11,11 +11,12 @@ before_install:
 install:
   - pip install -r src/requirements.txt
   - pip install fakeRPiGPIO
+  - yes | pip install git+https://github.com/duxingkei33/orangepi_PC_gpio_pyH3.git -v
   - pip install git+https://github.com/oaubert/python-vlc.git
   - pip install pylint
   - cp src/config.template.yaml src/config.yaml
 
 script: 
   - pylint --errors-only --extension-pkg-whitelist=alsaaudio src/main.py
-  - pylint --errors-only --extension-pkg-whitelist=alsaaudio src/alexapi
+  - pylint --errors-only --extension-pkg-whitelist=alsaaudio,pyA20 src/alexapi
   - pylint --errors-only src/auth_web.py
