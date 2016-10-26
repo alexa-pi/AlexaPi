@@ -1,6 +1,6 @@
 [Unit]
 Description=Alexa client for all your devices
-Documentation=https://github.com/alexa-pi/AlexaPi
+Documentation=https://github.com/alexa-pi/AlexaPi/wiki
 
 # Having network in "Wants" is intentional, because we want AlexaPi to start even when network is not available.
 # For example if there is a power loss and the device reboots, but the internet connection is not fixed yet
