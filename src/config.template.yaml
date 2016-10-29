@@ -1,9 +1,18 @@
 # Rename this file to config.yaml and fill in the fields
 
+# See https://github.com/alexa-pi/AlexaPi/wiki/Audio-setup-&-debugging
+# to get a better idea of how to set things in here
 sound:
-  # Name of your microphone/soundcard in arecord -L
+  # Name of your ALSA microphone/soundcard in arecord -L
   # you can also try setting it to 'default'
-  device: "plughw:1"
+  input_device: "plughw:1"
+
+  # you can go here with alsa, pulse or others
+  # keep blank for the best audio output selected by the underlying code
+  output: "alsa"
+  # output device for the audio output specified above,
+  # currently supports ALSA only
+  output_device: "default"
 
 # Amazon Alexa settings
 alexa:
