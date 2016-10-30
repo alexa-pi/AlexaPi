@@ -349,7 +349,20 @@ def play_audio(file, offset=0, overRideVolume=0):
 	global nav_token, p, audioplaying
 	if debug: print("{}Play_Audio Request for:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, file))
 	platform.indicate_playback()
-	i = vlc.Instance('--aout=alsa') # , '--alsa-audio-device=mono', '--file-logging', '--logfile=vlc-log.txt')
+
+	parameters = [
+		# '--alsa-audio-device=mono'
+		# '--file-logging'
+		# '--logfile=vlc-log.txt'
+	]
+
+	if config['sound']['output']:
+		parameters.append('--aout=' + config['sound']['output'])
+
+		if config['sound']['output_device']:
+			parameters.append('--alsa-audio-device=' + config['sound']['output_device'])
+
+	i = vlc.Instance(*parameters)
 	m = i.media_new(file)
 	p = i.media_player_new()
 	p.set_media(m)
@@ -430,7 +443,7 @@ def state_callback(event, player):
 
 def silence_listener(throwaway_frames):
 		# Reenable reading microphone raw data
-		inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, config['sound']['device'])
+		inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, config['sound']['input_device'])
 		inp.setchannels(1)
 		inp.setrate(VAD_SAMPLERATE)
 		inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
@@ -495,7 +508,7 @@ def loop():
 		record_audio = False
 		
 		# Enable reading microphone raw data
-		inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, config['sound']['device'])
+		inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, config['sound']['input_device'])
 		inp.setchannels(1)
 		inp.setrate(16000)
 		inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
