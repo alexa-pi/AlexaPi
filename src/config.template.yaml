@@ -27,7 +27,7 @@ sphinx:
   trigger_phrase: "alexa"
 
 platform:
-  # Name of your device, e.g. raspberrypi, orangepi, desktop
+  # Name of your platform, e.g. raspberrypi, orangepi, desktop
   device: "raspberrypi"
 
 platforms:
@@ -60,11 +60,6 @@ platforms:
     # GPIO Pin for the recording light
     rec_light: 25
 
-  desktop:
-    should_confirm_trigger: true
-
-    min_seconds_to_record: 3
-    
   orangepi:
     # GPIO Pin with button connected
     button: 20
@@ -72,3 +67,12 @@ platforms:
     plb_light: 9
     # GPIO Pin for the recording light
     rec_light: 8
+
+  desktop:
+    should_confirm_trigger: true
+
+    min_seconds_to_record: 3
+
+  dummy:
+    # whether to print messages when methods are called
+    verbose: false
