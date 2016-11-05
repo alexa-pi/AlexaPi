@@ -51,6 +51,14 @@ platforms:
       # you might wanna use full path to make sure AlexaPi finds it
       # you can use {resources_path} for the path to the AlexaPi "resources" directory
       audio_file: ""
+      
+  chip:
+    # GPIO Pin with button connected
+    button: XIO-P1
+    # GPIO Pin for the playback/activity light
+    plb_light: XIO-P3
+    # GPIO Pin for the recording light
+    rec_light: XIO-P5
 
   raspberrypi:
     # GPIO Pin with button connected
