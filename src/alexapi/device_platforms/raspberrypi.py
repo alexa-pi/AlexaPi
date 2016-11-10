@@ -1,4 +1,5 @@
-import time 
+from __future__ import print_function
+import time
 import os
 
 import RPi.GPIO as GPIO
@@ -20,9 +21,9 @@ class RaspberrypiPlatform(BasePlatform):
 
 		self.long_press_setup = False
 		if ('long_press' in self.__pconfig
-				and 'command' in self.__pconfig['long_press']
-				and len(self.__pconfig['long_press']['command']) > 0
-				and 'duration' in self.__pconfig['long_press']):
+	  			and 'command' in self.__pconfig['long_press']
+	  			and len(self.__pconfig['long_press']['command']) > 0
+	  			and 'duration' in self.__pconfig['long_press']):
 
 			self.long_press_setup = True
 
@@ -40,14 +41,14 @@ class RaspberrypiPlatform(BasePlatform):
 
 	def indicate_setup_failure(self):
 		while True:
-			for x in range(0, 5):
+			for _ in range(0, 5):
 				time.sleep(.1)
 				GPIO.output(self.__pconfig['rec_light'], GPIO.HIGH)
 				time.sleep(.1)
 				GPIO.output(self.__pconfig['rec_light'], GPIO.LOW)
 
 	def indicate_setup_success(self):
-		for x in range(0, 5):
+		for _ in range(0, 5):
 			time.sleep(.1)
 			GPIO.output(self.__pconfig['plb_light'], GPIO.HIGH)
 			time.sleep(.1)
@@ -58,22 +59,23 @@ class RaspberrypiPlatform(BasePlatform):
 		GPIO.add_event_detect(self.__pconfig['button'], GPIO.FALLING, callback=self.detect_button, bouncetime=100)
 
 	def indicate_recording(self, state=True):
-		GPIO.output(self.__pconfig['rec_light'], GPIO.HIGH if state == True else GPIO.LOW)
+		GPIO.output(self.__pconfig['rec_light'], GPIO.HIGH if state else GPIO.LOW)
 
 	def indicate_playback(self, state=True):
-		GPIO.output(self.__pconfig['plb_light'], GPIO.HIGH if state == True else GPIO.LOW)
+		GPIO.output(self.__pconfig['plb_light'], GPIO.HIGH if state else GPIO.LOW)
 
-	def detect_button(self, channel):
+	def detect_button(self, channel):   #  pylint: disable=unused-argument
 		buttonPress = time.time()
 		self.button_pressed = True
 
-		if self.__config['debug']: print("{}Button Pressed! Recording...{}".format(bcolors.OKBLUE, bcolors.ENDC))
+		if self.__config['debug']:
+			print("{}Button Pressed! Recording...{}".format(bcolors.OKBLUE, bcolors.ENDC))
 
 		time.sleep(.5)  # time for the button input to settle down
-		while (GPIO.input(self.__pconfig['button']) == 0):
+		while GPIO.input(self.__pconfig['button']) == 0:
 			time.sleep(.1)
 
-			if (self.long_press_setup) and (time.time() - buttonPress > self.__pconfig['long_press']['duration']):
+			if self.long_press_setup and (time.time() - buttonPress > self.__pconfig['long_press']['duration']):
 
 				if ('audio_file' in self.__pconfig['long_press']) and (len(self.__pconfig['long_press']['audio_file']) > 0):
 					pass
@@ -84,7 +86,8 @@ class RaspberrypiPlatform(BasePlatform):
 
 				os.system(self.__pconfig['long_press']['command'])
 
-		if self.__config['debug']: print("{}Recording Finished.{}".format(bcolors.OKBLUE, bcolors.ENDC))
+		if self.__config['debug']:
+			print("{}Recording Finished.{}".format(bcolors.OKBLUE, bcolors.ENDC))
 
 		self.button_pressed = False
 

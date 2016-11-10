@@ -21,7 +21,7 @@ try:
 except ImportError:
     import xml.etree.ElementTree as elementtree
 
-logging.basicConfig(filename='tunein.log',level=logging.DEBUG)
+logging.basicConfig(filename='tunein.log', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -29,7 +29,7 @@ class PlaylistError(Exception):
     pass
 
 
-class cache(object):
+class Cache(object):
     # TODO: merge this to util library (copied from mopidy-spotify)
 
     def __init__(self, ctl=0, ttl=3600):
@@ -44,7 +44,7 @@ class cache(object):
             try:
                 value, last_update = self.cache[args]
                 age = now - last_update
-                if (self._call_count > self.ctl or age > self.ttl):
+                if self._call_count > self.ctl or age > self.ttl:
                     self._call_count = 0
                     raise AttributeError
                 if self.ctl:
@@ -89,11 +89,11 @@ def parse_pls(data):
         for i in xrange(cp.getint(section, 'numberofentries')):
             try:
                 # TODO: Remove this horrible hack to avoid adverts
-                if cp.has_option(section, 'length%d' % (i+1)):
-                    if cp.get(section, 'length%d' % (i+1)) == '-1':
-                        yield cp.get(section, 'file%d' % (i+1))
+                if cp.has_option(section, 'length%d' % (i + 1)):
+                    if cp.get(section, 'length%d' % (i + 1)) == '-1':
+                        yield cp.get(section, 'file%d' % (i + 1))
                 else:
-                    yield cp.get(section, 'file%d' % (i+1))
+                    yield cp.get(section, 'file%d' % (i + 1))
             except configparser.NoOptionError:
                 return
 
@@ -120,16 +120,15 @@ def parse_old_asx(data):
 def parse_new_asx(data):
     # Copied from mopidy.audio.playlists
     try:
-        for event, element in elementtree.iterparse(data):
+        for _, element in elementtree.iterparse(data):
             element.tag = element.tag.lower()  # normalize
+            for ref in element.findall('entry/ref[@href]'):
+                yield fix_asf_uri(ref.get('href', '').strip())
+
+            for entry in element.findall('entry[@href]'):
+                yield fix_asf_uri(entry.get('href', '').strip())
     except elementtree.ParseError:
         return
-
-    for ref in element.findall('entry/ref[@href]'):
-        yield fix_asf_uri(ref.get('href', '').strip())
-
-    for entry in element.findall('entry[@href]'):
-        yield fix_asf_uri(entry.get('href', '').strip())
 
 
 def parse_asx(data):
@@ -184,8 +183,8 @@ class TuneIn(object):
 
     def reload(self):
         self._stations.clear()
-        self._tunein.clear()
-        self._get_playlist.clear()
+        self._tunein.clear()	# pylint: disable=no-member
+        self._get_playlist.clear()      # pylint: disable=no-member
 
     def _flatten(self, data):
         results = []
@@ -290,7 +289,7 @@ class TuneIn(object):
                 'URL': self._base_uri % url_args}
 
     def _station_info(self, station_id):
-        logger.debug('Fetching info for station %s' % station_id)
+        logger.debug('Fetching info for station %s', station_id)
         args = '&c=composite&detail=listing&id=' + station_id
         results = self._tunein('Describe.ashx', args)
         listings = self._filter_results(results, 'Listing', self._map_listing)
@@ -312,25 +311,25 @@ class TuneIn(object):
                 try:
                     results = [u for u in parser(playlist_data)
                                if u and u != url]
-                except Exception as e:
-                    logger.error('TuneIn playlist parsing failed %s' % e)
+                except Exception as exp:   # pylint: disable=broad-except
+                    logger.error('TuneIn playlist parsing failed %s', exp)
                 if not results:
                     logger.debug('Parsing failure, '
-                                 'malformed playlist: %s' % playlist)
+                                 'malformed playlist: %s', playlist)
         elif content_type:
             results = [url]
         logger.debug('Got %s', results)
         return list(OrderedDict.fromkeys(results))
 
     def tune(self, station):
-        logger.debug('Tuning station id %s' % station['guide_id'])
+        logger.debug('Tuning station id %s', station['guide_id'])
         args = '&id=' + station['guide_id']
         stream_uris = []
         for stream in self._tunein('Tune.ashx', args):
             if 'url' in stream:
                 stream_uris.append(stream['url'])
         if not stream_uris:
-            logger.error('Failed to tune station id %s' % station['guide_id'])
+            logger.error('Failed to tune station id %s', station['guide_id'])
         return list(OrderedDict.fromkeys(stream_uris))
 
     def station(self, station_id):
@@ -346,7 +345,7 @@ class TuneIn(object):
         if not query:
             logger.debug('Empty search query')
             return []
-        logger.debug('Searching TuneIn for "%s"' % query)
+        logger.debug('Searching TuneIn for "%s"', query)
         args = '&query=' + query
         search_results = self._tunein('Search.ashx', args)
         results = []
@@ -358,31 +357,31 @@ class TuneIn(object):
 
         return results
 
-    @cache()
+    @Cache()
     def _tunein(self, variant, args):
         uri = (self._base_uri % variant) + '?render=json' + args
         logger.debug('TuneIn request: %s', uri)
         try:
-            with closing(self._session.get(uri, timeout=self._timeout)) as r:
-                r.raise_for_status()
-                return r.json()['body']
-        except Exception as e:
-            logger.info('TuneIn API request for %s failed: %s' % (variant, e))
+            with closing(self._session.get(uri, timeout=self._timeout)) as resp:
+                resp.raise_for_status()
+                return resp.json()['body']
+        except Exception as exp:   # pylint: disable=broad-except
+            logger.info('TuneIn API request for %s failed: %s', variant, exp)
         return {}
 
-    @cache()
+    @Cache()
     def _get_playlist(self, uri):
         data, content_type = None, None
         try:
             # Defer downloading the body until know it's not a stream
             with closing(self._session.get(uri,
                                            timeout=self._timeout,
-                                           stream=True)) as r:
-                r.raise_for_status()
-                content_type = r.headers.get('content-type', 'audio/mpeg')
-                logger.debug('%s has content-type: %s' % (uri, content_type))
+                                           stream=True)) as resp:
+                resp.raise_for_status()
+                content_type = resp.headers.get('content-type', 'audio/mpeg')
+                logger.debug('%s has content-type: %s', uri, content_type)
                 if content_type != 'audio/mpeg':
-                    data = r.content.decode('utf-8', errors='ignore')
-        except Exception as e:
-            logger.info('TuneIn playlist request for %s failed: %s' % (uri, e))
+                    data = resp.content.decode('utf-8', errors='ignore')
+        except Exception as exp:   # pylint: disable=broad-except
+            logger.info('TuneIn playlist request for %s failed: %s', uri, exp)
         return (data, content_type)

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import sys
 
 from baseplatform import BasePlatform
@@ -14,26 +15,33 @@ class DummyPlatform(BasePlatform):
 		self.should_confirm_trigger = False
 
 	def setup(self):
-		if (self.__pconfig['verbose']): print("setup")
+		if self.__pconfig['verbose']:
+			print("setup")
 
 	def indicate_setup_failure(self):
-		if (self.__pconfig['verbose']): print("setup_failure")
+		if self.__pconfig['verbose']:
+			print("setup_failure")
 		sys.exit()
 
 	def indicate_setup_success(self):
-		if (self.__pconfig['verbose']): print("setup_complete")
+		if self.__pconfig['verbose']:
+			print("setup_complete")
 
 	def indicate_recording(self, state=True):
-		if (self.__pconfig['verbose']): print("indicate_recording_on " + str(state))
+		if self.__pconfig['verbose']:
+			print("indicate_recording_on " + str(state))
 
 	def indicate_playback(self, state=True):
-		if (self.__pconfig['verbose']): print("indicate_playback " + str(state))
+		if self.__pconfig['verbose']:
+			print("indicate_playback " + str(state))
 
 	def after_setup(self):
-		if (self.__pconfig['verbose']): print("after_setup")
+		if self.__pconfig['verbose']:
+			print("after_setup")
 
 	def should_record(self):
 		return False
 
 	def cleanup(self):
-		if (self.__pconfig['verbose']): print("cleanup")
+		if self.__pconfig['verbose']:
+			print("cleanup")
