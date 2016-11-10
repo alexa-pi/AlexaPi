@@ -1,5 +1,6 @@
 #! /usr/bin/env python
 
+from __future__ import print_function
 import os
 import json
 import urllib
@@ -15,21 +16,22 @@ with open(alexapi.config.filename, 'r') as stream:
 
 
 class Start(object):
+
 	def index(self):
-		scope = "alexa_all"
 		sd = json.dumps({
-		    "alexa:all": {
-		        "productID": config['alexa']['ProductID'],
-		        "productInstanceAttributes": {
-		            "deviceSerialNumber": "001"
-		        }
-		    }
+			"alexa:all": {
+				"productID": config['alexa']['ProductID'],
+				"productInstanceAttributes": {
+					"deviceSerialNumber": "001"
+				}
+			}
 		})
+
 		url = "https://www.amazon.com/ap/oa"
 		callback = cherrypy.url() + "code"
 		payload = {
 			"client_id": config['alexa']['Client_ID'],
-			"scope": scope,
+			"scope": "alexa:all",
 			"scope_data": sd,
 			"response_type": "code",
 			"redirect_uri": callback
@@ -44,7 +46,8 @@ class Start(object):
 		payload = {
 			"client_id": config['alexa']['Client_ID'],
 			"client_secret": config['alexa']['Client_Secret'],
-			"code": code, "grant_type": "authorization_code",
+			"code": code,
+			"grant_type": "authorization_code",
 			"redirect_uri": callback
 		}
 		url = "https://api.amazon.com/auth/o2/token"
@@ -67,6 +70,6 @@ cherrypy.config.update({"environment": "embedded"})
 
 
 ip = [(s.connect(('8.8.8.8', 53)), s.getsockname()[0], s.close()) for s in [socket.socket(socket.AF_INET, socket.SOCK_DGRAM)]][0][1]
-print "Ready goto http://{}:5050 or http://localhost:5050  to begin the auth process".format(ip)
-print "(Press Ctrl-C to exit this script once authorization is complete)"
+print("Ready goto http://{}:5050 or http://localhost:5050  to begin the auth process".format(ip))
+print("(Press Ctrl-C to exit this script once authorization is complete)")
 cherrypy.quickstart(Start())
