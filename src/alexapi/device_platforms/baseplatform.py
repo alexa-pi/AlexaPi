@@ -4,9 +4,21 @@ from abc import ABCMeta, abstractmethod
 class BasePlatform:
 	__metaclass__ = ABCMeta
 
-	@abstractmethod
-	def __init__(self, config):
-		pass
+	def __init__(self, config, platform_name):
+		self._config = config
+		self._pconfig = config['platforms']['common']
+		self._pconfig.update(config['platforms'][platform_name])
+
+		self.should_confirm_trigger = self._pconfig['should_confirm_trigger']
+
+		self.long_press_setup = False
+		if ('long_press' in self._pconfig
+			and 'command' in self._pconfig['long_press']
+			and len(self._pconfig['long_press']['command']) > 0
+			and 'duration' in self._pconfig['long_press']):
+			self.long_press_setup = True
+
+
 
 	@abstractmethod
 	def setup(self):
@@ -17,11 +29,11 @@ class BasePlatform:
 		pass
 
 	@abstractmethod
-	def indicate_setup_failure(self):
+	def indicate_failure(self):
 		pass
 
 	@abstractmethod
-	def indicate_setup_success(self):
+	def indicate_success(self):
 		pass
 
 	@abstractmethod
@@ -30,6 +42,10 @@ class BasePlatform:
 
 	@abstractmethod
 	def indicate_playback(self, state=True):
+		pass
+
+	@abstractmethod
+	def indicate_processing(self, state=True):
 		pass
 
 	@abstractmethod

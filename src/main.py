@@ -52,13 +52,9 @@ debug = cmdopts.debug
 if 'debug' not in config:
 	config['debug'] = debug
 
-try:
-	im = importlib.import_module('alexapi.device_platforms.' + config['platform']['device'], package=None)
-	cl = getattr(im, config['platform']['device'].capitalize() + 'Platform')
-	platform = cl(config)
-except ImportError:
-	from alexapi.device_platforms.desktop import DesktopPlatform
-	platform = DesktopPlatform(config)
+im = importlib.import_module('alexapi.device_platforms.' + config['platform']['device'], package=None)
+cl = getattr(im, config['platform']['device'].capitalize() + 'Platform')
+platform = cl(config)
 
 # Setup
 recorded = False
@@ -145,7 +141,9 @@ def alexa_speech_recognizer():
 	# https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/rest/speechrecognizer-requests
 	if debug:
 		print("{}Sending Speech Request...{}".format(bcolors.OKBLUE, bcolors.ENDC))
-	# platform.indicate_playback()
+
+	platform.indicate_processing()
+
 	url = 'https://access-alexa-na.amazon.com/v1/avs/speechrecognizer/recognize'
 	headers = {'Authorization': 'Bearer %s' % gettoken()}
 	data = {
@@ -174,6 +172,8 @@ def alexa_speech_recognizer():
 			('file', ('audio', inf, 'audio/L16; rate=16000; channels=1'))
 		]
 		resp = requests.post(url, headers=headers, files=files)
+
+	platform.indicate_processing(False)
 
 	process_response(resp)
 
@@ -250,6 +250,7 @@ def process_response(resp):
 	global nav_token, streamurl, streamid, currVolume
 	if debug:
 		print("{}Processing Request Response...{}".format(bcolors.OKBLUE, bcolors.ENDC))
+
 	nav_token = ""
 	streamurl = ""
 	streamid = ""
@@ -273,13 +274,10 @@ def process_response(resp):
 			if len(j['messageBody']['directives']) == 0:
 				if debug:
 					print("0 Directives received")
-				platform.indicate_recording(False)
-				platform.indicate_playback(False)
 
 			for directive in j['messageBody']['directives']:
 				if directive['namespace'] == 'SpeechSynthesizer':
 					if directive['name'] == 'speak':
-						platform.indicate_recording(False)
 						play_audio("file://" + tmp_path + directive['payload']['audioContent'].lstrip("cid:") + ".mp3")
 					for directive in j['messageBody']['directives']:  # if Alexa expects a response
 						if directive['namespace'] == 'SpeechRecognizer':  # this is included in the same string as above if a response was expected
@@ -336,28 +334,14 @@ def process_response(resp):
 				pThread = threading.Thread(target=play_audio, args=(content, _stream['offsetInMilliseconds']))
 				pThread.start()
 
-		return
 	elif resp.status_code == 204:
-		platform.indicate_recording(False)
-		for _ in range(0, 3):
-			time.sleep(.2)
-			platform.indicate_playback()
-			time.sleep(.2)
-			platform.indicate_playback(False)
 		if debug:
 			print("{}Request Response is null {}(This is OKAY!){}".format(bcolors.OKBLUE, bcolors.OKGREEN, bcolors.ENDC))
 	else:
 		print("{}(process_response Error){} Status Code: {}".format(bcolors.WARNING, bcolors.ENDC, resp.status_code))
 		resp.connection.close()
 
-		platform.indicate_playback(False)
-		platform.indicate_recording(False)
-		for _ in range(0, 3):
-			time.sleep(.2)
-			platform.indicate_recording()
-			time.sleep(.2)
-			platform.indicate_recording(False)
-
+		platform.indicate_failure()
 
 def play_audio(aud_file, offset=0, overRideVolume=0):   # pylint: disable=unused-argument
 	if aud_file.find('radiotime.com') != -1:
@@ -592,9 +576,10 @@ def setup():
 
 	token = gettoken()
 	if not token:
-		platform.indicate_setup_failure()
+		platform.indicate_failure()
+		sys.exit()
 
-	platform.indicate_setup_success()
+	platform.indicate_success()
 
 	if not silent:
 		play_audio(resources_path + "hello.mp3")
