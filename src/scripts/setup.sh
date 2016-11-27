@@ -5,19 +5,20 @@ ALEXASRC_DIRECTORY=`pwd -P`
 popd > /dev/null
 
 SCRIPT_DIRECTORY=$ALEXASRC_DIRECTORY/scripts
-TMP_DIR="/tmp"
 ALEXASRC_DIRECTORY_CORRECT="/opt/AlexaPi/src"
 CONFIG_SYSTEM_DIRECTORY="/etc/opt/AlexaPi"
 CONFIG_FILENAME="config.yaml"
 CONFIG_FILE_SYSTEM="${CONFIG_SYSTEM_DIRECTORY}/${CONFIG_FILENAME}"
 CONFIG_FILE_LOCAL="./${CONFIG_FILENAME}"
 
-RUN_USER="alexapi"
-
-if [ "$EUID" -ne 0 ]
-	then echo "Please run as root"
+if [ "$EUID" -ne 0 ]; then
+    echo "Please run as root"
 	exit
 fi
+
+echo "TIP: When there is a value in brackets like [default_value], hit Enter to use it."
+echo ""
+
 
 if [ "$ALEXASRC_DIRECTORY" != "$ALEXASRC_DIRECTORY_CORRECT" ]; then
 
@@ -27,7 +28,7 @@ if [ "$ALEXASRC_DIRECTORY" != "$ALEXASRC_DIRECTORY_CORRECT" ]; then
     echo "Note: If you're an advanced user, you can install the init script manually and edit it to reflect your install path, but we don't provide any guarantees."
     read -p "Interrupt? (Y/n)? " interrupt_script
 
-    case $interrupt_script in
+    case ${interrupt_script} in
             [nN] )
                 echo "Carrying on ..."
             ;;
@@ -37,14 +38,55 @@ if [ "$ALEXASRC_DIRECTORY" != "$ALEXASRC_DIRECTORY_CORRECT" ]; then
             ;;
     esac
 
-else
+fi
+
+cd ${SCRIPT_DIRECTORY}
+
+OS_default="debian"
+DEVICE_default="raspberrypi"
+
+echo "Which operating system are you using?"
+echo "debian        - Debian, Raspbian, Armbian, Ubuntu or other Debian-based"
+echo "archlinux     - Arch Linux or Arch Linux-based"
+read -p "Your OS [${OS_default}]: " OS
+
+if [ "${OS}" == "" ]; then
+    OS=${OS_default}
+elif [ ! -f "./inc/${OS}.sh" ]; then
+    echo "Incorrect value. Exiting."
+    exit
+fi
+
+echo "Which device are you using?"
+echo "raspberrypi   - all Raspberry Pi variants"
+echo "orangepi      - Orange Pi or another H3 based board"
+echo "chip          - C.H.I.P."
+echo "other         - other SBCs, desktops, or anything else"
+read -p "Your device [${DEVICE_default}]: " DEVICE
+
+if [ "${DEVICE}" == "" ]; then
+    DEVICE=${DEVICE_default}
+elif [ "${DEVICE}" != "other" ] && [ ! -f "./inc/${DEVICE}.sh" ]; then
+    echo "Incorrect value. Exiting."
+    exit
+fi
+
+source ./inc/common.sh
+
+source ./inc/${OS}.sh
+
+if [ "${DEVICE}" != "other" ]; then
+    source ./inc/${DEVICE}.sh
+fi
+
+if [ "$ALEXASRC_DIRECTORY" == "$ALEXASRC_DIRECTORY_CORRECT" ]; then
 
     echo "Do you want AlexaPi to run on boot?"
 	echo "You have these options: "
 	echo "0 - NO"
 	echo "1 - yes, use systemd (default, RECOMMENDED and awesome)"
 	echo "2 - yes, use a classic init script (for a very old PC or an embedded system)"
-	read -p "Which option do you prefer? [hit Enter for 1]: " init_type
+	read -p "Which option do you prefer? [1]: " init_type
 
     if [ "${init_type// /}" != "0" ]; then
 
@@ -53,52 +95,24 @@ else
         fi
 
         read -p "Would you like to have AlexaPi restart when it crashes? (y/N)? " monitorAlexa
-
-        echo -n "Creating a user to run AlexaPi under ... "
-        UID_TEST=`id -u $RUN_USER >/dev/null 2>&1`
-        UID_TEST="$?"
-
-        if [ $UID_TEST -eq 0 ]; then
-            echo "user already exists. That's cool - using that."
+        if [ "$monitorAlexa" == "y" ] || [ "$monitorAlexa" == "Y" ]; then
+            monitorAlexa=true
         else
-            useradd --system --user-group $RUN_USER 2>/dev/null
-            gpasswd -a $RUN_USER gpio > /dev/null
-            gpasswd -a $RUN_USER audio > /dev/null
-            if [ "$?" -eq "0" ]; then
-                echo "done."
-            else
-                echo "unknown error. useradd returned code $?."
-            fi
+            monitorAlexa=false
         fi
 
-        cd $SCRIPT_DIRECTORY
-        chmod +x *.sh
+        create_user
+        gpio_permissions
 
-        case $init_type in
+        cd ${SCRIPT_DIRECTORY}
+
+        case ${init_type} in
             2 ) # classic
-                install -Dm744 initd_alexa.sh /etc/init.d/AlexaPi
-
-                mkdir -p /etc/opt/AlexaPi
-                touch /etc/opt/AlexaPi/.keep
-                if [ "$monitorAlexa" == "y" ] || [ "$monitorAlexa" == "Y" ]; then
-                    touch /etc/opt/AlexaPi/monitor_enable
-                fi
-
-                touch /var/log/AlexaPi.log
-
-                update-rc.d AlexaPi defaults
+                init_classic ${monitorAlexa}
             ;;
 
             * ) # systemd
-                install -Dm644 ./AlexaPi.service /usr/lib/systemd/system/AlexaPi.service
-                install -Dm644 ./restart.conf /etc/systemd/system/AlexaPi.service.d/restart.conf.disabled
-
-                if [ "$monitorAlexa" == "y" ] || [ "$monitorAlexa" == "Y" ]; then
-                    mv /etc/systemd/system/AlexaPi.service.d/restart.conf.disabled /etc/systemd/system/AlexaPi.service.d/restart.conf
-                fi
-
-                systemctl daemon-reload
-                systemctl enable AlexaPi.service
+                init_systemd ${monitorAlexa}
             ;;
         esac
 
@@ -108,34 +122,28 @@ fi
 
 read -p "Would you like to also install Airplay support (Y/n)? " shairport
 
-apt-get update
-apt-get install wget git -y
+install_os
 
 cd $ALEXASRC_DIRECTORY
-wget --output-document ./vlc.py "http://git.videolan.org/?p=vlc/bindings/python.git;a=blob_plain;f=generated/vlc.py;hb=HEAD"
-apt-get install python-dev swig libasound2-dev memcached python-pip python-alsaaudio vlc libpulse-dev python-yaml -y
-pip install -r ./requirements.txt
+
+NEWPIP=`run_pip --version | grep "pip 1.5"`
+NEWPIP=$?
+if [ ${NEWPIP} -eq 1 ]; then
+    run_pip install --no-cache-dir -r ./requirements.txt
+else
+    run_pip install -r ./requirements.txt
+fi
+
+if [ "${DEVICE}" != "other" ]; then
+    install_device
+fi
 
 case $shairport in
         [nN] ) ;;
         * )
-                echo "--building and installing shairport-sync--"
-                cd $TMP_DIR
-
-                apt-get install autoconf libdaemon-dev libasound2-dev libpopt-dev libconfig-dev avahi-daemon libavahi-client-dev libssl-dev libsoxr-dev -y
-
-                git clone https://github.com/mikebrady/shairport-sync.git
-                cd shairport-sync
-                autoreconf -i -f
-                ./configure --with-alsa --with-avahi --with-ssl=openssl --with-soxr --with-metadata --with-pipe --with-systemd
-                make
-                getent group shairport-sync &>/dev/null || sudo groupadd -r shairport-sync >/dev/null
-                getent passwd shairport-sync &> /dev/null || sudo useradd -r -M -g shairport-sync -s /usr/bin/nologin -G audio shairport-sync >/dev/null
-                make install
-
+                echo "-- installing shairport-sync --"
+                install_shairport-sync
                 systemctl enable shairport-sync
-
-                rm -rf $TMP_DIR/shairport-sync
         ;;
 esac
 
@@ -163,24 +171,10 @@ if [ -f $CONFIG_FILE ]; then
 	read -p "Which option do you prefer? [hit Enter for 0]: " config_action
 fi
 
-declare -A config_defaults
-config_defaults[DeviceTypeID]=""
-config_defaults[SecurityProfileDescription]=""
-config_defaults[SecurityProfileID]=""
-config_defaults[ClientID]=""
-config_defaults[ClientSecret]=""
-
 case ${config_action} in
 
     1)
         echo "Editing existing configuration file ..."
-        echo "Hit Enter to fill in the current value (in brackets)."
-
-        config_defaults[DeviceTypeID]="`grep -o -P "(?<=ProductID:).*" ${CONFIG_FILE} | sed 's/^ *//;s/ *$//;s/"//g'`"
-        config_defaults[SecurityProfileDescription]="`grep -o -P "(?<=Security_Profile_Description:).*" ${CONFIG_FILE} | sed 's/^ *//;s/ *$//;s/"//g'`"
-        config_defaults[SecurityProfileID]="`grep -o -P "(?<=Security_Profile_ID:).*" ${CONFIG_FILE} | sed 's/^ *//;s/ *$//;s/"//g'`"
-        config_defaults[ClientID]="`grep -o -P "(?<=Client_ID:).*" ${CONFIG_FILE} | sed 's/^ *//;s/ *$//;s/"//g'`"
-        config_defaults[ClientSecret]="`grep -o -P "(?<=Client_Secret:).*" ${CONFIG_FILE} | sed 's/^ *//;s/ *$//;s/"//g'`"
     ;;
     2)
         echo "Creating configuration file ${CONFIG_FILE} ..."
@@ -193,34 +187,29 @@ case ${config_action} in
 
 esac
 
-read -p "Enter your Device Type ID [${config_defaults[DeviceTypeID]}]: " DeviceTypeID
-if [ "${DeviceTypeID}" == "" ]; then
-    DeviceTypeID="${config_defaults[DeviceTypeID]}"
-fi
-sed -i -e 's/ProductID.*/ProductID: "'"${DeviceTypeID}"'"/g' $CONFIG_FILE
+install_device_config
 
-read -p "Enter your Security Profile Description [${config_defaults[SecurityProfileDescription]}]: " SecurityProfileDescription
-if [ "${SecurityProfileDescription}" == "" ]; then
-    SecurityProfileDescription="${config_defaults[SecurityProfileDescription]}"
-fi
-sed -i -e 's/Security_Profile_Description.*/Security_Profile_Description: "'"${SecurityProfileDescription}"'"/g' $CONFIG_FILE
+declare -A config_defaults
+config_defaults[Device_Type_ID]=$(config_get Device_Type_ID)
+config_defaults[Security_Profile_Description]=$(config_get Security_Profile_Description)
+config_defaults[Security_Profile_ID]=$(config_get Security_Profile_ID)
+config_defaults[Client_ID]=$(config_get Client_ID)
+config_defaults[Client_Secret]=$(config_get Client_Secret)
 
-read -p "Enter your Security Profile ID [${config_defaults[SecurityProfileID]}]: " SecurityProfileID
-if [ "${SecurityProfileID}" == "" ]; then
-    SecurityProfileID="${config_defaults[SecurityProfileID]}"
-fi
-sed -i -e 's/Security_Profile_ID.*/Security_Profile_ID: "'"${SecurityProfileID}"'"/g' $CONFIG_FILE
+read -p "Enter your Device Type ID [${config_defaults[Device_Type_ID]}]: " Device_Type_ID
+config_set 'Device_Type_ID' ${Device_Type_ID}
 
-read -p "Enter your Client ID [${config_defaults[ClientID]}]: " ClientID
-if [ "${ClientID}" == "" ]; then
-    ClientID="${config_defaults[ClientID]}"
-fi
-sed -i -e 's/Client_ID.*/Client_ID: "'"${ClientID}"'"/g' $CONFIG_FILE
+read -p "Enter your Security Profile Description [${config_defaults[Security_Profile_Description]}]: " Security_Profile_Description
+config_set 'Security_Profile_Description' ${Security_Profile_Description}
 
-read -p "Enter your Client Secret [${config_defaults[ClientSecret]}]: " ClientSecret
-if [ "${ClientSecret}" == "" ]; then
-    ClientSecret="${config_defaults[ClientSecret]}"
-fi
-sed -i -e 's/Client_Secret.*/Client_Secret: "'"${ClientSecret}"'"/g' $CONFIG_FILE
+read -p "Enter your Security Profile ID [${config_defaults[Security_Profile_ID]}]: " Security_Profile_ID
+config_set 'Security_Profile_ID' ${Security_Profile_ID}
 
-python ./auth_web.py
+read -p "Enter your Client ID [${config_defaults[Client_ID]}]: " Client_ID
+config_set 'Client_ID' ${Client_ID}
+
+read -p "Enter your Client Secret [${config_defaults[Client_Secret]}]: " Client_Secret
+config_set 'Client_Secret' ${Client_Secret}
+
+
+run_python ./auth_web.py

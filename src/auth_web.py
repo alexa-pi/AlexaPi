@@ -20,7 +20,7 @@ class Start(object):
 	def index(self):
 		sd = json.dumps({
 			"alexa:all": {
-				"productID": config['alexa']['ProductID'],
+				"productID": config['alexa']['Device_Type_ID'],
 				"productInstanceAttributes": {
 					"deviceSerialNumber": "001"
 				}

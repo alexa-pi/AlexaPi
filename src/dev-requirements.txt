@@ -1,4 +1,3 @@
 fakeRPiGPIO
-git+https://github.com/oaubert/python-vlc.git
 -e git+https://github.com/xtacocorex/CHIP_IO.git#egg=CHIP_IO
 pylint

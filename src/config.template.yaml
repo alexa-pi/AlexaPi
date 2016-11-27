@@ -18,7 +18,7 @@ sound:
 alexa:
   Client_ID:
   Client_Secret:
-  ProductID:
+  Device_Type_ID:
   Security_Profile_Description:
   Security_Profile_ID:
   refresh_token:
@@ -28,7 +28,7 @@ sphinx:
 
 platform:
   # Name of your platform, e.g. raspberrypi, orangepi, desktop
-  device: "raspberrypi"
+  device: "dummy"
 
 platforms:
   # common config for all platforms (if they support the options)
