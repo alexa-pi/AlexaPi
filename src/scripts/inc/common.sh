@@ -122,7 +122,7 @@ function config_set {
     if [ "${value}" == "" ]; then
         value="${config_defaults[${name}]}"
     fi
-    sed -i -e 's/'"${name}"'.*/'"${name}"': "'"${value}"'"/g' ${CONFIG_FILE}
+    sed -i -e 's/ '"${name}"'.*/ '"${name}"': "'"${value}"'"/g' ${CONFIG_FILE}
 }
 
 function handle_root_platform {
