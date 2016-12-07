@@ -15,4 +15,4 @@ install:
   - cp src/config.template.yaml src/config.yaml
 
 script:
-  - pylint --rcfile=pylintrc src/auth_web.py src/main.py src/alexapi
+  - pylint --rcfile=pylintrc --ignore=tunein.py src/auth_web.py src/main.py src/alexapi

@@ -55,7 +55,7 @@ extension-pkg-whitelist=alsaaudio,pyA20,CHIP_IO
 # E1103: %s %r has no %r member (but some types could not be inferred) - fails to infer real members of types, e.g. in Celery
 # W0231: method from base class is not called - complains about not invoking empty __init__s in parents, which is annoying
 # R0921: abstract class not referenced, when in fact referenced from another egg
-disable=line-too-long,bad-continuation,missing-docstring,too-many-nested-blocks,too-many-branches,no-self-use,global-statement,too-many-statements,relative-import
+disable=line-too-long,bad-continuation,missing-docstring,too-many-nested-blocks,too-many-branches,no-self-use,global-statement,too-many-statements,relative-import,global-variable-not-assigned,superfluous-parens
 
 [REPORTS]
 

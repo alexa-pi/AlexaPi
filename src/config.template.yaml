@@ -7,12 +7,24 @@ sound:
   # you can also try setting it to 'default'
   input_device: "plughw:1"
 
+  playback_handler: "vlc"
+
   # you can go here with alsa, pulse or others
   # keep blank for the best audio output selected by the underlying code
   output: "alsa"
   # output device for the audio output specified above,
   # currently supports ALSA only
   output_device: "default"
+
+  # if left empty, won't be passed to the underlying library / command if it supports it
+  # if it doesn't 100% will be used
+  default_volume: 80
+
+  # Means the same as above, but is used for media (playing music for example)
+  # Leave blank to use the same setting as for speech content
+  media_output:
+  media_output_device:
+  media_default_volume:
 
 # Amazon Alexa settings
 alexa:

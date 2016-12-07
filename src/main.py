@@ -17,17 +17,15 @@ import yaml
 import alsaaudio
 import requests
 from memcache import Client
-import vlc
 
-import tunein
 import webrtcvad
 
 from pocketsphinx import get_model_path
 from pocketsphinx.pocketsphinx import Decoder
-# from sphinxbase.sphinxbase import *
 
 import alexapi.config
 import alexapi.bcolors as bcolors
+import alexapi.tunein as tunein
 
 with open(alexapi.config.filename, 'r') as stream:
 	config = yaml.load(stream)
@@ -35,15 +33,15 @@ with open(alexapi.config.filename, 'r') as stream:
 # Get arguments
 parser = optparse.OptionParser()
 parser.add_option('-s', '--silent',
-                  dest="silent",
-                  action="store_true",
-                  default=False,
-                  help="start without saying hello")
+		dest="silent",
+		action="store_true",
+		default=False,
+		help="start without saying hello")
 parser.add_option('-d', '--debug',
-                  dest="debug",
-                  action="store_true",
-                  default=False,
-                  help="display debug messages")
+		dest="debug",
+		action="store_true",
+		default=False,
+		help="display debug messages")
 
 cmdopts, cmdargs = parser.parse_args()
 silent = cmdopts.silent
@@ -55,6 +53,101 @@ if 'debug' not in config:
 im = importlib.import_module('alexapi.device_platforms.' + config['platform']['device'], package=None)
 cl = getattr(im, config['platform']['device'].capitalize() + 'Platform')
 platform = cl(config)
+
+
+class Player(object):
+
+	config = None
+	platform = None
+	pHandler = None
+	tunein_parser = None
+
+	navigation_token = None
+	playlist_last_item = None
+	progressReportRequired = []
+
+	def __init__(self, config, platform, pHandler): # pylint: disable=redefined-outer-name
+		self.config = config
+		self.platform = platform
+		self.pHandler = pHandler # pylint: disable=invalid-name
+		self.tunein_parser = tunein.TuneIn(5000)
+
+	def play_playlist(self, payload):
+		self.navigation_token = payload['navigationToken']
+		self.playlist_last_item = payload['audioItem']['streams'][-1]['streamId']
+
+		for stream in payload['audioItem']['streams']: # pylint: disable=redefined-outer-name
+
+			streamId = stream['streamId']
+			if stream['progressReportRequired']:
+				self.progressReportRequired.append(streamId)
+
+			url = stream['streamUrl']
+			if stream['streamUrl'].startswith("cid:"):
+				url = "file://" + tmp_path + stream['streamUrl'].lstrip("cid:") + ".mp3"
+
+			if (url.find('radiotime.com') != -1):
+				url = self.tunein_playlist(url)
+
+			self.pHandler.queued_play(mrl_fix(url), stream['offsetInMilliseconds'], audio_type='media', streamId=streamId)
+
+	def play_speech(self, mrl):
+		self.stop()
+		self.pHandler.blocking_play(mrl)
+
+	def stop(self):
+		self.pHandler.stop()
+
+	def is_playing(self):
+		return self.pHandler.is_playing
+
+	def get_volume(self):
+		return self.pHandler.volume
+
+	def set_volume(self, volume):
+		self.pHandler.set_volume(volume)
+
+	def playback_callback(self, requestType, playerActivity, streamId):
+
+		if (requestType == 'STARTED') and (playerActivity == 'PLAYING'):
+			self.platform.indicate_playback()
+		elif (requestType in ['INTERRUPTED', 'FINISHED', 'ERROR']) and (playerActivity == 'IDLE'):
+			self.platform.indicate_playback(False)
+
+		if streamId:
+			if streamId in self.progressReportRequired:
+				self.progressReportRequired.remove(streamId)
+				alexa_playback_progress_report_request(requestType, playerActivity, streamId)
+
+			if (requestType == 'FINISHED') and (playerActivity == 'IDLE') and (self.playlist_last_item == streamId):
+				gThread = threading.Thread(target=alexa_getnextitem, args=(self.navigation_token,))
+				self.navigation_token = None
+				gThread.start()
+
+	def tunein_playlist(self, url):
+		if self.config['debug']:
+			print("TUNE IN URL = {}".format(url))
+
+		req = requests.get(url)
+		lines = req.content.split('\n')
+
+		nurl = self.tunein_parser.parse_stream_url(lines[0])
+		if (len(nurl) != 0):
+			return nurl[0]
+
+		return ""
+
+
+# Playback handler
+def playback_callback(requestType, playerActivity, streamId):
+	global player
+
+	return player.playback_callback(requestType, playerActivity, streamId)
+
+im = importlib.import_module('alexapi.playback_handlers.' + config['sound']['playback_handler'] + "handler", package=None)
+cl = getattr(im, config['sound']['playback_handler'].capitalize() + 'Handler')
+pHandler = cl(config, playback_callback)
+player = Player(config, platform, pHandler)
 
 # Setup
 recorded = False
@@ -83,16 +176,7 @@ if not debug:
 decoder = Decoder(ps_config)
 decoder.start_utt()
 
-# Variables
-player = None
-nav_token = ""
-streamurl = ""
-streamid = ""
-position = 0
-audioplaying = False
-tunein_parser = tunein.TuneIn(5000)
 vad = webrtcvad.Vad(2)
-currVolume = 100
 
 # constants
 VAD_SAMPLERATE = 16000
@@ -103,6 +187,15 @@ VAD_THROWAWAY_FRAMES = 10
 MAX_RECORDING_LENGTH = 8
 MAX_VOLUME = 100
 MIN_VOLUME = 30
+
+
+def mrl_fix(url):
+	if ('#' in url) and url.startswith('file://'):
+		new_url = url.replace('#', '.hashMark.')
+		os.rename(url.replace('file://', ''), new_url.replace('file://', ''))
+		url = new_url
+
+	return url
 
 
 def internet_on():
@@ -178,35 +271,41 @@ def alexa_speech_recognizer():
 	process_response(resp)
 
 
-def alexa_getnextitem(token):
+def alexa_getnextitem(navigationToken):
 	# https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/rest/audioplayer-getnextitem-request
-	time.sleep(0.5)
-	if not audioplaying:
-		if debug:
-			print("{}Sending GetNextItem Request...{}".format(bcolors.OKBLUE, bcolors.ENDC))
-		# platform.indicate_playback()
-		url = 'https://access-alexa-na.amazon.com/v1/avs/audioplayer/getNextItem'
-		headers = {
-			'Authorization': 'Bearer %s' % gettoken(),
-			'content-type': 'application/json; charset=UTF-8'}
-		data = {
-			"messageHeader": {},
-			"messageBody": {
-				"navigationToken": token
-			}
-		}
-		response = requests.post(url, headers=headers, data=json.dumps(data))
-		process_response(response)
 
+	if debug:
+		print("{}Sending GetNextItem Request...{}".format(bcolors.OKBLUE, bcolors.ENDC))
+
+	url = 'https://access-alexa-na.amazon.com/v1/avs/audioplayer/getNextItem'
+	headers = {
+		'Authorization': 'Bearer %s' % gettoken(),
+		'content-type': 'application/json; charset=UTF-8'
+	}
+
+	data = {
+		"messageHeader": {},
+		"messageBody": {
+			"navigationToken": navigationToken
+		}
+	}
+
+	response = requests.post(url, headers=headers, data=json.dumps(data))
+	process_response(response)
 
 def alexa_playback_progress_report_request(requestType, playerActivity, stream_id):
 	# https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/rest/audioplayer-events-requests
 	# streamId                  Specifies the identifier for the current stream.
 	# offsetInMilliseconds      Specifies the current position in the track, in milliseconds.
 	# playerActivity            IDLE, PAUSED, or PLAYING
+
 	if debug:
 		print("{}Sending Playback Progress Report Request...{}".format(bcolors.OKBLUE, bcolors.ENDC))
-	headers = {'Authorization': 'Bearer %s' % gettoken()}
+
+	headers = {
+		'Authorization': 'Bearer %s' % gettoken()
+	}
+
 	data = {
 		"messageHeader": {},
 		"messageBody": {
@@ -246,16 +345,14 @@ def alexa_playback_progress_report_request(requestType, playerActivity, stream_i
 			print("{}Playback Progress Report was {}Successful!{}".format(bcolors.OKBLUE, bcolors.OKGREEN, bcolors.ENDC))
 
 
-def process_response(resp):
-	global nav_token, streamurl, streamid, currVolume
+def process_response(response):
+	global player
+
 	if debug:
 		print("{}Processing Request Response...{}".format(bcolors.OKBLUE, bcolors.ENDC))
 
-	nav_token = ""
-	streamurl = ""
-	streamid = ""
-	if resp.status_code == 200:
-		data = "Content-Type: " + resp.headers['content-type'] + '\r\n\r\n' + resp.content
+	if response.status_code == 200:
+		data = "Content-Type: " + response.headers['content-type'] + '\r\n\r\n' + response.content
 		msg = email.message_from_string(data)
 		for payload in msg.get_payload():
 			if payload.get_content_type() == "application/json":
@@ -269,6 +366,7 @@ def process_response(resp):
 			else:
 				if debug:
 					print("{}NEW CONTENT TYPE RETURNED: {} {}".format(bcolors.WARNING, bcolors.ENDC, payload.get_content_type()))
+
 		# Now process the response
 		if 'directives' in j['messageBody']:
 			if len(j['messageBody']['directives']) == 0:
@@ -278,169 +376,59 @@ def process_response(resp):
 			for directive in j['messageBody']['directives']:
 				if directive['namespace'] == 'SpeechSynthesizer':
 					if directive['name'] == 'speak':
-						play_audio("file://" + tmp_path + directive['payload']['audioContent'].lstrip("cid:") + ".mp3")
-					for directive in j['messageBody']['directives']:  # if Alexa expects a response
-						if directive['namespace'] == 'SpeechRecognizer':  # this is included in the same string as above if a response was expected
-							if directive['name'] == 'listen':
-								if debug:
-									print("{}Further Input Expected, timeout in: {} {}ms".format(bcolors.OKBLUE, bcolors.ENDC, directive['payload']['timeoutIntervalInMillis']))
-								play_audio(resources_path + 'beep.wav', 0, 100)
-								timeout = directive['payload']['timeoutIntervalInMillis'] / 116
-								# listen until the timeout from Alexa
-								silence_listener(timeout)
-								# now process the response
-								alexa_speech_recognizer()
+						platform.indicate_recording(False)
+						player.play_speech(mrl_fix("file://" + tmp_path + directive['payload']['audioContent'].lstrip("cid:") + ".mp3"))
+
+				elif directive['namespace'] == 'SpeechRecognizer':
+					if directive['name'] == 'listen':
+						if debug:
+							print("{}Further Input Expected, timeout in: {} {}ms".format(bcolors.OKBLUE, bcolors.ENDC, directive['payload']['timeoutIntervalInMillis']))
+
+						player.play_speech(resources_path + 'beep.wav')
+						timeout = directive['payload']['timeoutIntervalInMillis'] / 116
+						silence_listener(timeout)
+
+						# now process the response
+						alexa_speech_recognizer()
+
 				elif directive['namespace'] == 'AudioPlayer':
-					# do audio stuff - still need to honor the playBehavior
 					if directive['name'] == 'play':
-						nav_token = directive['payload']['navigationToken']
-						for _stream in directive['payload']['audioItem']['streams']:
-							if _stream['progressReportRequired']:
-								streamid = _stream['streamId']
-								# playBehavior = directive['payload']['playBehavior']
-							if _stream['streamUrl'].startswith("cid:"):
-								content = "file://" + tmp_path + _stream['streamUrl'].lstrip("cid:") + ".mp3"
-							else:
-								content = _stream['streamUrl']
-							pThread = threading.Thread(target=play_audio, args=(content, _stream['offsetInMilliseconds']))
-							pThread.start()
+						player.play_playlist(directive['payload'])
+
 				elif directive['namespace'] == "Speaker":
 					# speaker control such as volume
 					if directive['name'] == 'SetVolume':
 						vol_token = directive['payload']['volume']
 						type_token = directive['payload']['adjustmentType']
-						if type_token == 'relative':
-							currVolume = currVolume + int(vol_token)
+						if (type_token == 'relative'):
+							volume = player.get_volume() + int(vol_token)
 						else:
-							currVolume = int(vol_token)
+							volume = int(vol_token)
 
-						if currVolume > MAX_VOLUME:
-							currVolume = MAX_VOLUME
-						elif currVolume < MIN_VOLUME:
-							currVolume = MIN_VOLUME
+						if (volume > MAX_VOLUME):
+							volume = MAX_VOLUME
+						elif (volume < MIN_VOLUME):
+							volume = MIN_VOLUME
+
+						player.set_volume(volume)
 
 						if debug:
-							print("new volume = {}".format(currVolume))
+							print("new volume = {}".format(volume))
 
-		elif 'audioItem' in j['messageBody']: 			# Additional Audio Iten
-			nav_token = j['messageBody']['navigationToken']
-			for _stream in j['messageBody']['audioItem']['streams']:
-				if _stream['progressReportRequired']:
-					streamid = _stream['streamId']
-				if _stream['streamUrl'].startswith("cid:"):
-					content = "file://" + tmp_path + _stream['streamUrl'].lstrip("cid:") + ".mp3"
-				else:
-					content = _stream['streamUrl']
-				pThread = threading.Thread(target=play_audio, args=(content, _stream['offsetInMilliseconds']))
-				pThread.start()
+		# Additional Audio Iten
+		elif 'audioItem' in j['messageBody']:
+			player.play_playlist(j['messageBody'])
 
-	elif resp.status_code == 204:
+		return
+
+	elif response.status_code == 204:
 		if debug:
 			print("{}Request Response is null {}(This is OKAY!){}".format(bcolors.OKBLUE, bcolors.OKGREEN, bcolors.ENDC))
 	else:
-		print("{}(process_response Error){} Status Code: {}".format(bcolors.WARNING, bcolors.ENDC, resp.status_code))
-		resp.connection.close()
+		print("{}(process_response Error){} Status Code: {}".format(bcolors.WARNING, bcolors.ENDC, response.status_code))
+		response.connection.close()
 
 		platform.indicate_failure()
-
-def play_audio(aud_file, offset=0, overRideVolume=0):   # pylint: disable=unused-argument
-	if aud_file.find('radiotime.com') != -1:
-		aud_file = tuneinplaylist(aud_file)
-	global player, audioplaying
-	if debug:
-		print("{}Play_Audio Request for:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, aud_file))
-	platform.indicate_playback()
-
-	parameters = [
-		# '--alsa-audio-device=mono'
-		# '--file-logging'
-		# '--logfile=vlc-log.txt'
-	]
-
-	if config['sound']['output']:
-		parameters.append('--aout=' + config['sound']['output'])
-
-		if config['sound']['output_device']:
-			parameters.append('--alsa-audio-device=' + config['sound']['output_device'])
-
-	vlc_inst = vlc.Instance(*parameters)
-	media = vlc_inst.media_new(aud_file)
-	player = vlc_inst.media_player_new()
-	player.set_media(media)
-	mm = media.event_manager()
-	mm.event_attach(vlc.EventType.MediaStateChanged, state_callback, player)
-	audioplaying = True
-
-	if overRideVolume == 0:
-		player.audio_set_volume(currVolume)
-	else:
-		player.audio_set_volume(overRideVolume)
-
-	player.play()
-	while audioplaying:
-		continue
-	platform.indicate_playback(False)
-
-
-def tuneinplaylist(url):
-	if debug:
-		print("TUNE IN URL = {}".format(url))
-	req = requests.get(url)
-	lines = req.content.split('\n')
-
-	nurl = tunein_parser.parse_stream_url(lines[0])
-	if len(nurl) != 0:
-		return nurl[0]
-
-	return ""
-
-
-def state_callback(event, media_player):    # pylint: disable=unused-argument
-	global nav_token, audioplaying, streamurl, streamid
-	state = media_player.get_state()
-	#  0: 'NothingSpecial'
-	#  1: 'Opening'
-	#  2: 'Buffering'
-	#  3: 'Playing'
-	#  4: 'Paused'
-	#  5: 'Stopped'
-	#  6: 'Ended'
-	#  7: 'Error'
-	if debug:
-		print("{}Player State:{} {}".format(bcolors.OKGREEN, bcolors.ENDC, state))
-	if state == 3:		# Playing
-		if streamid != "":
-			rThread = threading.Thread(target=alexa_playback_progress_report_request, args=("STARTED", "PLAYING", streamid))
-			rThread.start()
-	elif state == 5:  # Stopped
-		audioplaying = False
-		if streamid != "":
-			rThread = threading.Thread(target=alexa_playback_progress_report_request, args=("INTERRUPTED", "IDLE", streamid))
-			rThread.start()
-		streamurl = ""
-		streamid = ""
-		nav_token = ""
-	elif state == 6:  # Ended
-		audioplaying = False
-		if streamid != "":
-			rThread = threading.Thread(target=alexa_playback_progress_report_request, args=("FINISHED", "IDLE", streamid))
-			rThread.start()
-			streamid = ""
-		if streamurl != "":
-			pThread = threading.Thread(target=play_audio, args=(streamurl,))
-			streamurl = ""
-			pThread.start()
-		elif nav_token != "":
-			gThread = threading.Thread(target=alexa_getnextitem, args=(nav_token,))
-			gThread.start()
-	elif state == 7:
-		audioplaying = False
-		if streamid != "":
-			rThread = threading.Thread(target=alexa_playback_progress_report_request, args=("ERROR", "IDLE", streamid))
-			rThread.start()
-		streamurl = ""
-		streamid = ""
-		nav_token = ""
 
 
 def silence_listener(throwaway_frames):
@@ -491,9 +479,7 @@ def silence_listener(throwaway_frames):
 			thresholdSilenceMet = True
 
 	if debug:
-		print ("Debug: End recording")
-
-	# if debug: play_audio(resources_path+'beep.wav', 0, 100)
+		print("Debug: End recording")
 
 	platform.indicate_recording(False)
 	with open(tmp_path + 'recording.wav', 'w') as rf:
@@ -502,6 +488,8 @@ def silence_listener(throwaway_frames):
 
 
 def loop():
+	global player
+
 	while True:
 		record_audio = False
 
@@ -527,17 +515,18 @@ def loop():
 				triggered_by_voice = decoder.hyp() is not None
 				triggered = triggered_by_platform or triggered_by_voice
 
-			if audioplaying:
+			if player.is_playing():
 				player.stop()
 
 			record_audio = True
 
 			if triggered_by_voice or (triggered_by_platform and platform.should_confirm_trigger):
-				play_audio(resources_path + 'alexayes.mp3', 0)
+				player.play_speech(resources_path + 'alexayes.mp3')
+				time.sleep(0.5)
 
 		# do the following things if either the button has been pressed or the trigger word has been said
 		if debug:
-			print ("detected the edge, setting up audio")
+			print("detected the edge, setting up audio")
 
 		# To avoid overflows close the microphone connection
 		inp.close()
@@ -569,6 +558,7 @@ def setup():
 	for sig in (signal.SIGABRT, signal.SIGILL, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
 		signal.signal(sig, cleanup)
 
+	pHandler.setup()
 	platform.setup()
 
 	while not internet_on():
@@ -582,13 +572,14 @@ def setup():
 	platform.indicate_success()
 
 	if not silent:
-		play_audio(resources_path + "hello.mp3")
+		player.play_speech(resources_path + "hello.mp3")
 
 	platform.after_setup()
 
 
 def cleanup(signal, frame):   # pylint: disable=redefined-outer-name,unused-argument
 	platform.cleanup()
+	pHandler.cleanup()
 	shutil.rmtree(tmp_path)
 	sys.exit(0)
 
