@@ -61,6 +61,7 @@ echo "Which device are you using?"
 echo "raspberrypi   - all Raspberry Pi variants"
 echo "orangepi      - Orange Pi or another H3 based board"
 echo "chip          - C.H.I.P."
+echo "magicmirror   - Integrating with Magic Mirror project (MMM-AlexaPi)"
 echo "other         - other SBCs, desktops, or anything else"
 read -p "Your device [${DEVICE_default}]: " DEVICE
 

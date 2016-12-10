@@ -63,7 +63,7 @@ platforms:
       # you might wanna use full path to make sure AlexaPi finds it
       # you can use {resources_path} for the path to the AlexaPi "resources" directory
       audio_file: ""
-      
+
   chip:
     # GPIO Pin with button connected
     button: XIO-P1
@@ -96,3 +96,17 @@ platforms:
   dummy:
     # whether to print messages when methods are called
     verbose: false
+
+  magicmirror:
+    # Magic Mirror - github.com/MichMich/MagicMirror
+    # Integrates with MMM-AlexaPi module (github.com/dgonano/MMM-AlexaPi) to display listening, playback, etc status
+    # Hostname of the AlexaPi HTTP server, leave empty for any name
+    hostname: ""
+    # Port the ALexaPi HTTTP server binds to
+    port: 5055
+    # Hostname of the Magic Mirror
+    mm_hostname: "localhost"
+    # Port of the Magic Mirror
+    mm_port: "8080"
+    # How ofter the Hearbeat fires in seconds
+    hb_timer: 5
