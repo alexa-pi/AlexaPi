@@ -234,7 +234,7 @@ max-statements=50
 max-parents=7
 
 # Maximum number of attributes for a class (see R0902).
-max-attributes=14
+max-attributes=16
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=0

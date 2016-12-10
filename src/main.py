@@ -259,6 +259,7 @@ def alexa_speech_recognizer():
 			"format": "audio/L16; rate=16000; channels=1"
 		}
 	}
+
 	with open(tmp_path + 'recording.wav') as inf:
 		files = [
 			('file', ('request', json.dumps(data), 'application/json; charset=UTF-8')),
@@ -432,6 +433,10 @@ def process_response(response):
 
 
 def silence_listener(throwaway_frames):
+
+	if debug:
+		print("Debug: Setting up recording")
+
 	# Reenable reading microphone raw data
 	inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, config['sound']['input_device'])
 	inp.setchannels(1)
@@ -446,6 +451,9 @@ def silence_listener(throwaway_frames):
 	numSilenceRuns = 0
 	silenceRun = 0
 	start = time.time()
+
+	if debug:
+		print("Debug: Start recording")
 
 	platform.indicate_recording()
 
@@ -522,14 +530,12 @@ def loop():
 
 			if triggered_by_voice or (triggered_by_platform and platform.should_confirm_trigger):
 				player.play_speech(resources_path + 'alexayes.mp3')
-				time.sleep(0.5)
-
-		# do the following things if either the button has been pressed or the trigger word has been said
-		if debug:
-			print("detected the edge, setting up audio")
 
 		# To avoid overflows close the microphone connection
 		inp.close()
+
+		silence_listener(VAD_THROWAWAY_FRAMES)
+		alexa_speech_recognizer()
 
 		# clean up the temp directory
 		if not debug:
@@ -538,16 +544,8 @@ def loop():
 				try:
 					if os.path.isfile(file_path):
 						os.remove(file_path)
-				except Exception as exp:   # pylint: disable=broad-except
+				except Exception as exp: # pylint: disable=broad-except
 					print(exp)
-
-		if debug:
-			print("Starting to listen...")
-		silence_listener(VAD_THROWAWAY_FRAMES)
-
-		if debug:
-			print("Debug: Sending audio to be processed")
-		alexa_speech_recognizer()
 
 		# Now that request is handled restart audio decoding
 		decoder.end_utt()

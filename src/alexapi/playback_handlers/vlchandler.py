@@ -32,7 +32,11 @@ class VlcHandler(BaseHandler):
 		self.volume = None
 		self.media_volume = None
 
-		self.current_item_lock = None
+		self.current_item_lock = threading.Event()
+
+		# This has inverted logic
+		self.play_lock = threading.Event()
+		self.play_lock.set()
 
 	def setup(self):
 
@@ -78,8 +82,12 @@ class VlcHandler(BaseHandler):
 		if self.__config['debug']:
 			print("{}Play_Audio Request for:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, item['url']))
 
+		if not self.play_lock.isSet():
+			self.play_lock.wait()
+
+		self.play_lock.clear()
+
 		self.is_playing = True
-		self.current_item_lock = threading.Event()
 		self.stream_id = item['streamId']
 
 		vlcInstance = self.vlc_instance
@@ -105,14 +113,14 @@ class VlcHandler(BaseHandler):
 			player.set_time(item['offset'])
 
 		self.current_item_lock.wait()
-
-		time.sleep(0.5)
+		self.current_item_lock.clear()
 
 		self.event_manager.event_detach(vlc.EventType.MediaStateChanged)
 		self.player.stop()
 		self.media_player.stop()
 
 		self.is_playing = False
+		self.play_lock.set()
 
 	def queued_play(self, url, offset=0, audio_type='media', streamId=None):
 
@@ -152,6 +160,9 @@ class VlcHandler(BaseHandler):
 		while len(self.queue):
 			item = self.queue.popleft()
 			self.__play(item)
+
+			if len(self.queue) > 0:
+				time.sleep(0.5)
 
 		self.processing_queue = False
 
