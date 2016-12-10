@@ -173,7 +173,7 @@ class VlcHandler(BaseHandler):
 		self.media_player.stop()
 
 	def cleanup(self):
-		pass
+		self.stop()
 
 	def set_volume(self, volume):
 		self.volume = volume
