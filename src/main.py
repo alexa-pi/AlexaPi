@@ -534,9 +534,6 @@ def loop():
 		# To avoid overflows close the microphone connection
 		inp.close()
 
-		silence_listener(VAD_THROWAWAY_FRAMES)
-		alexa_speech_recognizer()
-
 		# clean up the temp directory
 		if not debug:
 			for some_file in os.listdir(tmp_path):
@@ -546,6 +543,9 @@ def loop():
 						os.remove(file_path)
 				except Exception as exp: # pylint: disable=broad-except
 					print(exp)
+
+		silence_listener(VAD_THROWAWAY_FRAMES)
+		alexa_speech_recognizer()
 
 		# Now that request is handled restart audio decoding
 		decoder.end_utt()
