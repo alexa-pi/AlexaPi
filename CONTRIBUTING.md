@@ -5,7 +5,7 @@ This is based on [Home Assistant's](https://github.com/home-assistant/home-assis
 ## Code standards
 
 We stick to [PEP8](https://www.python.org/dev/peps/pep-0008/) with the one exception being the indentation.
-We use **tabs for indentation** and **spaces for alignment**.
+We use **tabs for indentation**.
 
 Please stick to this to keep the code clean, readable and consistent.
 
@@ -71,25 +71,16 @@ Let's stick to the rule that no one (not even core developers) pushes directly t
 
 **Always make sure there is no malicious code there before running it!**
 
-If you want a fresh directory to do that:
-```
-git clone -b NEW_FEATURE_BRANCH https://github.com/PERSONS_GIT_USERNAME/PERSONS_REPO_NAME.git AlexaPi
-```
+- If you want to check out a Pull Request from your existing directory:
 
-If you want to add it to your existing directory:
-```
-# Suppose you have done this already:
-git clone https://github.com/alexa-pi/AlexaPi
-cd AlexaPi
+    ```
+    git fetch upstream pull/PULL_ID/head:PULL_ID
+    git checkout PULL_ID
+    ```
+    Where `PULL_ID` is the actual Pull Request number.
 
-# Then do this
-git remote add PERSONS_GIT_USERNAME https://github.com/PERSONS_GIT_USERNAME/PERSONS_REPO_NAME.git
-git fetch PERSONS_GIT_USERNAME
-git checkout PERSONS_GIT_USERNAME/NEW_FEATURE_BRANCH
-
-# If the person updates the PR, you can pull new commits just by running:
-# (while you're at the correct branch)
-git pull PERSONS_GIT_USERNAME NEW_FEATURE_BRANCH
-```
-
-Where `PERSONS_REPO_NAME` is usually `AlexaPi`, but can also be `AlexaPi-1`, `AlexaPiNG`, or anything else.
+- If you want a fresh directory to do that:
+    ```
+    git clone -b NEW_FEATURE_BRANCH https://github.com/PERSONS_GIT_USERNAME/PERSONS_REPO_NAME.git AlexaPi
+    ```
+    Where `PERSONS_REPO_NAME` is usually `AlexaPi`, but can also be `AlexaPi-1`, `AlexaPiNG`, or anything else.

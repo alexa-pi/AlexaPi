@@ -1,6 +1,6 @@
 Thank you for reporting an issue with **AlexaPi**.
 
-Make sure you are running the latest version of **AlexaPi**, and look through [issues](https://github.com/alexa-pi/AlexaPi/issues?utf8=%E2%9C%93&q=) before submitting.
+Make sure you are running the latest version of **AlexaPi**, and look through [issues](https://github.com/alexa-pi/AlexaPi/issues?utf8=%E2%9C%93&q=is%3Aissue) before submitting.
 
 Check out our [Wiki](https://github.com/alexa-pi/AlexaPi/wiki/), and make sure to look at [Debugging](https://github.com/alexa-pi/AlexaPi/wiki/Debugging/), and [Audio debugging](https://github.com/alexa-pi/AlexaPi/wiki/Audio-setup-&-debugging) in particular before filing an issue.
 
