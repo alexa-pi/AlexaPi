@@ -5,6 +5,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.3.1] - 2017-01-01
+
+This is mainly a test of doing bugfix releases.
+
+### Fixed
+- Error message in setup when the device _other_ is selected.
+
 ## [1.3] - 2016-12-21
 - **IMPORTANT**: This is a major rewrite that requires you to delete the whole old version and set up the new one from scratch. See the [Migration quick-guide](https://github.com/alexa-pi/AlexaPi/wiki/Migration) for help.
 - A lot of refactoring and changes for better future development.
@@ -72,7 +79,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 @sammachin created the project in January 2016 and made significant changes that lead to this version.
 
 
-[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.3...HEAD
+[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.3.1...HEAD
+[1.3.1]: https://github.com/alexa-pi/AlexaPi/compare/v1.3...v1.3.1
 [1.3]: https://github.com/alexa-pi/AlexaPi/compare/v1.2...v1.3
 [1.2]: https://github.com/alexa-pi/AlexaPi/compare/v1.1...v1.2
 [Devices]: https://github.com/alexa-pi/AlexaPi/wiki/Devices

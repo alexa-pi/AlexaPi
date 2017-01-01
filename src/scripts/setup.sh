@@ -188,7 +188,9 @@ case ${config_action} in
 
 esac
 
-install_device_config
+if [ "${DEVICE}" != "other" ]; then
+    install_device_config
+fi
 
 declare -A config_defaults
 config_defaults[Device_Type_ID]=$(config_get Device_Type_ID)
