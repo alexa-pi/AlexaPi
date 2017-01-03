@@ -148,3 +148,28 @@ platforms:
     mm_port: "8080"
     # How ofter the Hearbeat fires in seconds
     hb_timer: 5
+
+  hyperion:
+    # Hostname of the Hyperion node's JSON server
+    hyperion_json_host: "127.0.0.1"
+    # Port of the Hyperion node's JSON server
+    hyperion_json_port: 19444
+    # Visual status as static 'color' or 'effect'
+    # Overridden by 'hyperion_flash_state_xxx'
+    hyperion_mode: "effect"
+    # Running speed when visualizing as 'effect'
+    hyperion_effect_speed: 1
+    hyperion_priority: 1
+    color_playback: [80, 213, 35]
+    color_processing: [35,169,213]
+    color_recording: [168, 35, 213]
+    flash_duration: 500
+    flash_frequency: 8
+    # Use Strobe effect instead of default effect or static color
+    flash_state_playback: true
+    flash_state_processing: false
+    flash_state_recording: false
+    # Visualize playback state
+    indicate_playback: true
+    #Also print json request/response when in debug mode
+    verbose: false

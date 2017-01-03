@@ -11,6 +11,8 @@ Please update your config according to the [Configuration changes] section on th
 - dependency on the _coloredlogs_ Python library
 - Now configurable (in the configuration file):
 	- logging level
+- New _hyperion_ platform. Allows status visualization with [Hyperion](https://hyperion-project.org).
+
 
 ### Changed
 - Refactored triggering:
@@ -50,7 +52,7 @@ This is mainly a test of doing bugfix releases.
 
 ### Changed
 - Improved directory structure.
-- Paths improvements for better _platform-independency_ and UX. 
+- Paths improvements for better _platform-independency_ and UX.
     - Use system temporary directory for recordings/answers, which is usually in RAM to avoid using system storage.
     - Default install path is now _/opt/AlexaPi_.
 - Uses pocketsphinx only from PyPI (not the extra `git pull` anymore), which saves about 200 MB on bandwidth and 250 MB in storage space.
