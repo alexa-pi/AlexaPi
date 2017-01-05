@@ -30,6 +30,8 @@ You will need:
 If your AlexaPi isn't running on startup, crashes or your audio input / output isn't working, be sure to check out:
 
 - our **[Documentation Wiki](https://github.com/alexa-pi/AlexaPi/wiki)** - the sections with _debugging_ in their name are your friends!
-- our **[Issue Tracker](https://github.com/alexa-pi/AlexaPi/issues)** 
+- our **[Issue Tracker](https://github.com/alexa-pi/AlexaPi/issues)**. 
 
-or chat with us at **[gitter.im/alexa-pi/Lobby](https://gitter.im/alexa-pi/Lobby)**.
+Also, you can
+- chat with us at **[gitter.im/alexa-pi/Lobby](https://gitter.im/alexa-pi/Lobby)**  
+- join our **[AlexaPi Users](https://plus.google.com/communities/105607055053826225738/)** user community on Google+  
