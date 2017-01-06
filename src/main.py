@@ -12,6 +12,7 @@ import threading
 import json
 import optparse
 import email
+import subprocess
 
 import yaml
 import alsaaudio
@@ -49,6 +50,17 @@ debug = cmdopts.debug
 
 if 'debug' not in config:
 	config['debug'] = debug
+
+# Setup event commands
+event_commands = {
+	'startup': "",
+	'pre_interaction': "",
+	'post_interaction': "",
+	'shutdown': "",
+}
+
+if 'event_commands' in config:
+	event_commands.update(config['event_commands'])
 
 im = importlib.import_module('alexapi.device_platforms.' + config['platform']['device'], package=None)
 cl = getattr(im, config['platform']['device'].capitalize() + 'Platform')
@@ -497,6 +509,7 @@ def silence_listener(throwaway_frames):
 
 def loop():
 	global player
+	global event_commands
 
 	while True:
 		record_audio = False
@@ -528,8 +541,11 @@ def loop():
 
 			record_audio = True
 
-			if triggered_by_voice or (triggered_by_platform and platform.should_confirm_trigger):
-				player.play_speech(resources_path + 'alexayes.mp3')
+		if event_commands['pre_interaction']:
+			subprocess.Popen(event_commands['pre_interaction'], shell=True, stdout=subprocess.PIPE)
+
+		if triggered_by_voice or (triggered_by_platform and platform.should_confirm_trigger):
+			player.play_speech(resources_path + 'alexayes.mp3')
 
 		# To avoid overflows close the microphone connection
 		inp.close()
@@ -547,14 +563,22 @@ def loop():
 		silence_listener(VAD_THROWAWAY_FRAMES)
 		alexa_speech_recognizer()
 
+		if event_commands['post_interaction']:
+			subprocess.Popen(event_commands['post_interaction'], shell=True, stdout=subprocess.PIPE)
+
 		# Now that request is handled restart audio decoding
 		decoder.end_utt()
 		decoder.start_utt()
 
 
 def setup():
+	global event_commands
+
 	for sig in (signal.SIGABRT, signal.SIGILL, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
 		signal.signal(sig, cleanup)
+
+	if event_commands['startup']:
+		subprocess.Popen(event_commands['startup'], shell=True, stdout=subprocess.PIPE)
 
 	pHandler.setup()
 	platform.setup()
@@ -576,9 +600,14 @@ def setup():
 
 
 def cleanup(signal, frame):   # pylint: disable=redefined-outer-name,unused-argument
+	global event_commands
 	platform.cleanup()
 	pHandler.cleanup()
 	shutil.rmtree(tmp_path)
+
+	if event_commands['shutdown']:
+		subprocess.Popen(event_commands['shutdown'], shell=True, stdout=subprocess.PIPE)
+
 	sys.exit(0)
 
 

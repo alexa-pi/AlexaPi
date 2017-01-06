@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+- Startup, pre-interaction, post-interaction and Shutdown commands. Can be used to adjust shairport-sync volume for example (see config.yaml)
+
 ## [1.3.1] - 2017-01-01
 
 This is mainly a test of doing bugfix releases.

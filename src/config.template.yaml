@@ -38,6 +38,29 @@ alexa:
 sphinx:
   trigger_phrase: "alexa"
 
+# Commands to run before and after an interaction begins. Leave empty to disable.
+event_commands:
+
+  # Example used to lower shairport-sync volume during interaction with alexa
+  #     startup: "amixer set shairportvolume 100%"
+  #     pre_interaction: "amixer set shairportvolume 10%-""
+  #     post_interaction: "amixer set shairportvolume 10%+""
+  # Note this assumes you have redirected shairport-syncs audio to a seperate softdevice
+  # with control "shairportvolume". Example asound.conf avalible in the scripts folder
+
+  # Command to run at the start of AlexaPi
+  startup: ""
+
+  # Command to run after a trigger is detected but before an interaction begins
+  pre_interaction: ""
+
+  # Command to run after the interaction has completed
+  post_interaction: ""
+
+  # Command to run during a clean shutdown of AlexaPi
+    shutdown: ""
+
+
 platform:
   # Name of your platform, e.g. raspberrypi, orangepi, desktop
   device: "dummy"
