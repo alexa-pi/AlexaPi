@@ -58,7 +58,7 @@ event_commands:
   post_interaction: ""
 
   # Command to run during a clean shutdown of AlexaPi
-    shutdown: ""
+  shutdown: ""
 
 
 platform:

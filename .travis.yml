@@ -12,7 +12,7 @@ install:
   - pip install -r src/requirements.txt
   - pip install -r src/dev-requirements.txt
   - yes | pip install git+https://github.com/duxingkei33/orangepi_PC_gpio_pyH3.git -v
-  - cp src/config.template.yaml src/config.yaml
 
 script:
   - pylint --rcfile=pylintrc --ignore=tunein.py src/auth_web.py src/main.py src/alexapi
+  - python -c "import yaml; yaml.load(open('src/config.template.yaml'))"
