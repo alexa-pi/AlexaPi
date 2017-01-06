@@ -178,3 +178,17 @@ platforms:
     indicate_playback: true
     #Also print json request/response when in debug mode
     verbose: false
+
+  serial:
+    port: "/dev/ttyACM0"
+    baudrate: 9600
+    messages:
+      trigger: ""
+      playback_start: "g"
+      playback_end: "x"
+      recording_start: ""
+      recording_end: ""
+      processing_start: ""
+      processing_end: ""
+      failure: ""
+      success: ""
