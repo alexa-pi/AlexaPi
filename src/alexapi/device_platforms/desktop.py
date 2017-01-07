@@ -31,12 +31,15 @@ class DesktopPlatform(BasePlatform):
 	def indicate_processing(self, state=True):
 		print("indicate_processing " + str(state))
 
-	def after_setup(self):
-		self.trigger_thread = DesktopPlatformTriggerThread(self)
+	def after_setup(self, trigger_callback=None):
+
+		self._trigger_callback = trigger_callback
+
+		self.trigger_thread = DesktopPlatformTriggerThread(self, trigger_callback)
 		self.trigger_thread.setDaemon(True)
 		self.trigger_thread.start()
 
-	def should_record(self):
+	def force_recording(self):
 		return time.time() - self.started < self._pconfig['min_seconds_to_record']
 
 	def cleanup(self):
@@ -44,10 +47,11 @@ class DesktopPlatform(BasePlatform):
 
 
 class DesktopPlatformTriggerThread(threading.Thread):
-	def __init__(self, platform):
+	def __init__(self, platform, trigger_callback):
 		threading.Thread.__init__(self)
 
 		self.platform = platform
+		self._trigger_callback = trigger_callback
 		self.should_run = True
 
 	def stop(self):
@@ -60,3 +64,6 @@ class DesktopPlatformTriggerThread(threading.Thread):
 				key = raw_input('Type "a" to trigger Alexa: ')
 
 			self.platform.started = time.time()
+
+			if self._trigger_callback:
+				self._trigger_callback(self.platform.force_recording)

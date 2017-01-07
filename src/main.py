@@ -21,12 +21,10 @@ from memcache import Client
 
 import webrtcvad
 
-from pocketsphinx import get_model_path
-from pocketsphinx.pocketsphinx import Decoder
-
 import alexapi.config
 import alexapi.bcolors as bcolors
 import alexapi.tunein as tunein
+import alexapi.triggers as triggers
 
 with open(alexapi.config.filename, 'r') as stream:
 	config = yaml.load(stream)
@@ -168,25 +166,6 @@ mc = Client(servers, debug=1)
 path = os.path.realpath(__file__).rstrip(os.path.basename(__file__))
 resources_path = os.path.join(path, 'resources', '')
 tmp_path = os.path.join(tempfile.mkdtemp(prefix='AlexaPi-runtime-'), '')
-
-# PocketSphinx configuration
-ps_config = Decoder.default_config()
-
-# Set recognition model to US
-ps_config.set_string('-hmm', os.path.join(get_model_path(), 'en-us'))
-ps_config.set_string('-dict', os.path.join(get_model_path(), 'cmudict-en-us.dict'))
-
-# Specify recognition key phrase
-ps_config.set_string('-keyphrase', config['sphinx']['trigger_phrase'])
-ps_config.set_float('-kws_threshold', 1e-5)
-
-# Hide the VERY verbose logging information
-if not debug:
-	ps_config.set_string('-logfn', '/dev/null')
-
-# Process audio chunk by chunk. On keyword detected perform action and restart search
-decoder = Decoder(ps_config)
-decoder.start_utt()
 
 vad = webrtcvad.Vad(2)
 
@@ -444,7 +423,7 @@ def process_response(response):
 		platform.indicate_failure()
 
 
-def silence_listener(throwaway_frames):
+def silence_listener(throwaway_frames, force_record=None):
 
 	if debug:
 		print("Debug: Setting up recording")
@@ -457,150 +436,114 @@ def silence_listener(throwaway_frames):
 	inp.setperiodsize(VAD_PERIOD)
 	audio = ""
 
+	start = time.time()
+
+	do_VAD = True
+	if force_record and not force_record[1]:
+		do_VAD = False
+
 	# Buffer as long as we haven't heard enough silence or the total size is within max size
 	thresholdSilenceMet = False
 	frames = 0
 	numSilenceRuns = 0
 	silenceRun = 0
-	start = time.time()
+
 
 	if debug:
 		print("Debug: Start recording")
 
 	platform.indicate_recording()
 
-	# do not count first 10 frames when doing VAD
-	while frames < throwaway_frames:  # VAD_THROWAWAY_FRAMES):
-		length, data = inp.read()
-		frames = frames + 1
-		if length:
-			audio += data
+	if do_VAD:
+		# do not count first 10 frames when doing VAD
+		while frames < throwaway_frames:  # VAD_THROWAWAY_FRAMES):
+			length, data = inp.read()
+			frames = frames + 1
+			if length:
+				audio += data
 
 	# now do VAD
-	while platform.should_record() or ((thresholdSilenceMet is False) and ((time.time() - start) < MAX_RECORDING_LENGTH)):
+	while (force_record and force_record[0]()) \
+			or (do_VAD and (thresholdSilenceMet is False) and ((time.time() - start) < MAX_RECORDING_LENGTH)):
+
 		length, data = inp.read()
 		if length:
 			audio += data
 
-			if length == VAD_PERIOD:
+			if do_VAD and (length == VAD_PERIOD):
 				isSpeech = vad.is_speech(data, VAD_SAMPLERATE)
 
 				if not isSpeech:
-					silenceRun = silenceRun + 1
-					# print "0"
+					silenceRun += 1
 				else:
 					silenceRun = 0
-					numSilenceRuns = numSilenceRuns + 1
-					# print "1"
+					numSilenceRuns += 1
 
-		# only count silence runs after the first one
-		# (allow user to speak for total of max recording length if they haven't said anything yet)
-		if (numSilenceRuns != 0) and ((silenceRun * VAD_FRAME_MS) > VAD_SILENCE_TIMEOUT):
-			thresholdSilenceMet = True
+		if do_VAD:
+			# only count silence runs after the first one
+			# (allow user to speak for total of max recording length if they haven't said anything yet)
+			if (numSilenceRuns != 0) and ((silenceRun * VAD_FRAME_MS) > VAD_SILENCE_TIMEOUT):
+				thresholdSilenceMet = True
 
 	if debug:
 		print("Debug: End recording")
 
-	platform.indicate_recording(False)
-	with open(tmp_path + 'recording.wav', 'w') as rf:
-		rf.write(audio)
 	inp.close()
 
+	platform.indicate_recording(False)
 
-def loop():
+	with open(tmp_path + 'recording.wav', 'w') as rf:
+		rf.write(audio)
+
+
+trigger_thread = None
+def trigger_callback(trigger):
+	global trigger_thread
+	global event_commands
+
+	triggers.disable()
+
+	trigger_thread = threading.Thread(target=trigger_process, args=(trigger,))
+	trigger_thread.setDaemon(True)
+	trigger_thread.start()
+
+
+def trigger_process(trigger):
 	global player
-	global event_commands
 
-	while True:
-		record_audio = False
+	if event_commands['pre_interaction']:
+		subprocess.Popen(event_commands['pre_interaction'], shell=True, stdout=subprocess.PIPE)
 
-		# Enable reading microphone raw data
-		inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, config['sound']['input_device'])
-		inp.setchannels(1)
-		inp.setrate(16000)
-		inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
-		inp.setperiodsize(1024)
+	if player.is_playing():
+		player.stop()
 
-		while not record_audio:
-			time.sleep(.1)
+	if trigger.voice_confirm:
+		player.play_speech(resources_path + 'alexayes.mp3')
 
-			triggered = False
-			# Process microphone audio via PocketSphinx, listening for trigger word
-			while not triggered:
-				# Read from microphone
-				_, buf = inp.read()
-				# Detect if keyword/trigger word was said
-				decoder.process_raw(buf, False, False)
+	# clean up the temp directory
+	if not debug:
+		for some_file in os.listdir(tmp_path):
+			file_path = os.path.join(tmp_path, some_file)
+			try:
+				if os.path.isfile(file_path):
+					os.remove(file_path)
+			except Exception as exp: # pylint: disable=broad-except
+				print(exp)
 
-				triggered_by_platform = platform.should_record()
-				triggered_by_voice = decoder.hyp() is not None
-				triggered = triggered_by_platform or triggered_by_voice
+	force_record = None
+	if trigger.event_type in triggers.types_continuous:
+		force_record = (trigger.continuous_callback, trigger.event_type in triggers.types_vad)
 
-			if player.is_playing():
-				player.stop()
+	silence_listener(VAD_THROWAWAY_FRAMES, force_record=force_record)
+	alexa_speech_recognizer()
 
-			record_audio = True
+	triggers.enable()
 
-		if event_commands['pre_interaction']:
-			subprocess.Popen(event_commands['pre_interaction'], shell=True, stdout=subprocess.PIPE)
-
-		if triggered_by_voice or (triggered_by_platform and platform.should_confirm_trigger):
-			player.play_speech(resources_path + 'alexayes.mp3')
-
-		# To avoid overflows close the microphone connection
-		inp.close()
-
-		# clean up the temp directory
-		if not debug:
-			for some_file in os.listdir(tmp_path):
-				file_path = os.path.join(tmp_path, some_file)
-				try:
-					if os.path.isfile(file_path):
-						os.remove(file_path)
-				except Exception as exp: # pylint: disable=broad-except
-					print(exp)
-
-		silence_listener(VAD_THROWAWAY_FRAMES)
-		alexa_speech_recognizer()
-
-		if event_commands['post_interaction']:
-			subprocess.Popen(event_commands['post_interaction'], shell=True, stdout=subprocess.PIPE)
-
-		# Now that request is handled restart audio decoding
-		decoder.end_utt()
-		decoder.start_utt()
-
-
-def setup():
-	global event_commands
-
-	for sig in (signal.SIGABRT, signal.SIGILL, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
-		signal.signal(sig, cleanup)
-
-	if event_commands['startup']:
-		subprocess.Popen(event_commands['startup'], shell=True, stdout=subprocess.PIPE)
-
-	pHandler.setup()
-	platform.setup()
-
-	while not internet_on():
-		print(".")
-
-	token = gettoken()
-	if not token:
-		platform.indicate_failure()
-		sys.exit()
-
-	platform.indicate_success()
-
-	if not silent:
-		player.play_speech(resources_path + "hello.mp3")
-
-	platform.after_setup()
+	if event_commands['post_interaction']:
+		subprocess.Popen(event_commands['post_interaction'], shell=True, stdout=subprocess.PIPE)
 
 
 def cleanup(signal, frame):   # pylint: disable=redefined-outer-name,unused-argument
-	global event_commands
 	platform.cleanup()
 	pHandler.cleanup()
 	shutil.rmtree(tmp_path)
@@ -612,5 +555,34 @@ def cleanup(signal, frame):   # pylint: disable=redefined-outer-name,unused-argu
 
 
 if __name__ == "__main__":
-	setup()
-	loop()
+
+	for sig in (signal.SIGABRT, signal.SIGILL, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
+		signal.signal(sig, cleanup)
+
+	if event_commands['startup']:
+		subprocess.Popen(event_commands['startup'], shell=True, stdout=subprocess.PIPE)
+
+	triggers.init(config, trigger_callback)
+	triggers.setup()
+
+	pHandler.setup()
+	platform.setup()
+
+	while not internet_on():
+		print(".")
+
+	if not gettoken():
+		platform.indicate_failure()
+		sys.exit()
+
+	platform.indicate_success()
+
+	if not silent:
+		player.play_speech(resources_path + "hello.mp3")
+
+	platform_trigger_callback = triggers.triggers['platform'].platform_callback if 'platform' in triggers.triggers else None
+	platform.after_setup(platform_trigger_callback)
+	triggers.enable()
+
+	while True:
+		time.sleep(1)

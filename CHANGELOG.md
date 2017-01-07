@@ -4,12 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
+Please update your config according to the  [Configuration changes] section on the wiki.
+
+### Changed
+- Refactored triggering:
+    - Split into modules. Standalone user triggers are now possible.
+    - Each trigger can be enabled / disabled. Voice triggering is therefore now optional (although enabled by default).
+    - Pocketsphinx's _threshold_ is now configurable.
 
 ### Added
 - Startup, pre-interaction, post-interaction and Shutdown commands. Can be used to adjust shairport-sync volume for example (see config.yaml)
 
 ## [1.3.1] - 2017-01-01
-
 This is mainly a test of doing bugfix releases.
 
 ### Fixed
@@ -86,5 +92,6 @@ This is mainly a test of doing bugfix releases.
 [1.3.1]: https://github.com/alexa-pi/AlexaPi/compare/v1.3...v1.3.1
 [1.3]: https://github.com/alexa-pi/AlexaPi/compare/v1.2...v1.3
 [1.2]: https://github.com/alexa-pi/AlexaPi/compare/v1.1...v1.2
-[Devices]: https://github.com/alexa-pi/AlexaPi/wiki/Devices
 [Documentation]: https://github.com/alexa-pi/AlexaPi/wiki/
+[Devices]: https://github.com/alexa-pi/AlexaPi/wiki/Devices
+[Configuration changes]: https://github.com/alexa-pi/AlexaPi/wiki/Configuration-changes

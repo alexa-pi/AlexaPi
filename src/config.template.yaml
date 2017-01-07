@@ -35,8 +35,37 @@ alexa:
   Security_Profile_ID:
   refresh_token:
 
-sphinx:
-  trigger_phrase: "alexa"
+# See https://github.com/alexa-pi/AlexaPi/wiki/Triggers for the description of these options
+triggers:
+  platform:
+    enabled: true
+    voice_confirm: false
+
+    # one of: oneshot-vad, continuous, continuous-vad
+    event_type: "oneshot-vad"
+
+    # only for "continuous" event_types
+    long_press:
+      # system command to run after pressing the button for _duration_ number of seconds
+      # empty to disable
+      command: ""
+
+      # duration in seconds
+      duration: 10
+
+      # CURRENTLY DISABLED
+      # optional audio file to play before executing the command
+      # you might wanna use full path to make sure AlexaPi finds it
+      # you can use {resources_path} for the path to the AlexaPi "resources" directory
+      audio_file: ""
+
+
+  pocketsphinx:
+    enabled: true
+    voice_confirm: true
+
+    phrase: "alexa"
+    threshold: 1e-5
 
 # Commands to run before and after an interaction begins. Leave empty to disable.
 event_commands:
@@ -60,7 +89,6 @@ event_commands:
   # Command to run during a clean shutdown of AlexaPi
   shutdown: ""
 
-
 platform:
   # Name of your platform, e.g. raspberrypi, orangepi, desktop
   device: "dummy"
@@ -69,23 +97,6 @@ platforms:
   # common config for all platforms (if they support the options)
   # can be overriden in the the respective platform sections
   common:
-    # whether you want to hear Alexa's "yes" after you press a button
-    # "true" or "false"
-    should_confirm_trigger: false
-
-    long_press:
-      # system command to run after pressing the button for _duration_ number of seconds
-      # empty to disable
-      command: ""
-
-      # duration in seconds
-      duration: 10
-
-      # CURRENTLY DISABLED
-      # optional audio file to play before executing the command
-      # you might wanna use full path to make sure AlexaPi finds it
-      # you can use {resources_path} for the path to the AlexaPi "resources" directory
-      audio_file: ""
 
   chip:
     # GPIO Pin with button connected
@@ -112,8 +123,6 @@ platforms:
     rec_light: 8
 
   desktop:
-    should_confirm_trigger: true
-
     min_seconds_to_record: 3
 
   dummy:

@@ -8,8 +8,6 @@ class DummyPlatform(BasePlatform):
 	def __init__(self, config):
 		super(DummyPlatform, self).__init__(config, 'dummy')
 
-		self.should_confirm_trigger = False
-
 	def setup(self):
 		if self._pconfig['verbose']:
 			print("setup")
@@ -34,11 +32,11 @@ class DummyPlatform(BasePlatform):
 		if self._pconfig['verbose']:
 			print("indicate_processing " + str(state))
 
-	def after_setup(self):
+	def after_setup(self, trigger_callback=None): # pylint: disable=unused-argument
 		if self._pconfig['verbose']:
 			print("after_setup")
 
-	def should_record(self):
+	def force_recording(self):
 		return False
 
 	def cleanup(self):

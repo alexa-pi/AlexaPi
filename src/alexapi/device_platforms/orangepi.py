@@ -18,11 +18,10 @@ class OrangepiPlatform(RPiLikePlatform):
 		GPIO.setcfg(self._pconfig['rec_light'], GPIO.OUTPUT)
 		GPIO.setcfg(self._pconfig['plb_light'], GPIO.OUTPUT)
 
-	def after_setup(self):
-		# threaded detection of button press
-		self.wait_for_button_thread()
+	def after_setup(self, trigger_callback=None):
 
-	def wait_for_button_thread(self):
+		self._trigger_callback = trigger_callback
+
 		thread = threading.Thread(target=self.wait_for_button, args=())
 		thread.daemon = True
 		thread.start()

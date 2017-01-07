@@ -30,7 +30,6 @@ class MagicmirrorPlatform(BasePlatform):
 		self.hb_timer = self._pconfig['hb_timer']
 
 		self.shutdown = False
-		self.req_record = False
 		self.httpd = ""
 		self.serverthread = ""
 
@@ -57,7 +56,10 @@ class MagicmirrorPlatform(BasePlatform):
 
 		self.update_mm("success")
 
-	def after_setup(self):
+	def after_setup(self, trigger_callback=None):
+
+		self._trigger_callback = trigger_callback
+
 		if self._config['debug']:
 			print("Starting Magic Mirror platform HTTP Server")
 
@@ -86,10 +88,8 @@ class MagicmirrorPlatform(BasePlatform):
 
 		self.update_mm("processing" if state else "idle")
 
-	def should_record(self):
-		record = self.req_record
-		self.req_record = False
-		return record
+	def force_recording(self):
+		return False
 
 	def update_mm(self, status):
 		address = ("http://" + self.mm_host + ":" + self.mm_port + "/alexapi?action=AVSSTATUS&status=" + status)
@@ -128,7 +128,10 @@ class MagicmirrorPlatform(BasePlatform):
 
 	def http_callback(self, query_dict):
 		if (query_dict['action'][0] == "requestrecord"):
-			self.req_record = True
+
+			if self._trigger_callback:
+				self._trigger_callback()
+
 			return True
 		else:
 			return False
