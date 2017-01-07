@@ -2,7 +2,7 @@
 
 function install_os {
     pacman -Sy
-    pacman -S git python2 python2-pip swig alsa-lib alsa-utils libpulse vlc memcached gcc --noconfirm --needed
+    pacman -S git python2 python2-pip swig alsa-lib alsa-utils libpulse vlc sox libmad libid3tag memcached gcc --noconfirm --needed
 
     install -Dm644 ./unit-overrides/force-python2.conf /etc/systemd/system/AlexaPi.service.d/force-python2.conf
     systemctl daemon-reload
