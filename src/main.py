@@ -25,6 +25,7 @@ import coloredlogs
 import alexapi.config
 import alexapi.tunein as tunein
 import alexapi.triggers as triggers
+from alexapi.constants import RequestType, PlayerActivity
 
 logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s')
 coloredlogs.DEFAULT_FIELD_STYLES = {
@@ -177,10 +178,9 @@ class Player(object):
 		self.pHandler.set_volume(volume)
 
 	def playback_callback(self, requestType, playerActivity, streamId):
-
-		if (requestType == 'STARTED') and (playerActivity == 'PLAYING'):
+		if (requestType == RequestType.STARTED) and (playerActivity == PlayerActivity.PLAYING):
 			self.platform.indicate_playback()
-		elif (requestType in ['INTERRUPTED', 'FINISHED', 'ERROR']) and (playerActivity == 'IDLE'):
+		elif (requestType in [RequestType.INTERRUPTED, RequestType.FINISHED, RequestType.ERROR]) and (playerActivity == PlayerActivity.IDLE):
 			self.platform.indicate_playback(False)
 
 		if streamId:
@@ -188,7 +188,7 @@ class Player(object):
 				self.progressReportRequired.remove(streamId)
 				alexa_playback_progress_report_request(requestType, playerActivity, streamId)
 
-			if (requestType == 'FINISHED') and (playerActivity == 'IDLE') and (self.playlist_last_item == streamId):
+			if (requestType == RequestType.FINISHED) and (playerActivity == PlayerActivity.IDLE) and (self.playlist_last_item == streamId):
 				gThread = threading.Thread(target=alexa_getnextitem, args=(self.navigation_token,))
 				self.navigation_token = None
 				gThread.start()
@@ -363,23 +363,23 @@ def alexa_playback_progress_report_request(requestType, playerActivity, stream_i
 		}
 	}
 
-	if requestType.upper() == "ERROR":
+	if requestType.upper() == RequestType.ERROR:
 		# The Playback Error method sends a notification to AVS that the audio player has experienced an issue during playback.
 		url = "https://access-alexa-na.amazon.com/v1/avs/audioplayer/playbackError"
-	elif requestType.upper() == "FINISHED":
+	elif requestType.upper() == RequestType.FINISHED:
 		# The Playback Finished method sends a notification to AVS that the audio player has completed playback.
 		url = "https://access-alexa-na.amazon.com/v1/avs/audioplayer/playbackFinished"
-	elif requestType.upper() == "IDLE":
+	elif requestType.upper() == PlayerActivity.IDLE: # This is an error as described in https://github.com/alexa-pi/AlexaPi/issues/117
 		# The Playback Idle method sends a notification to AVS that the audio player has reached the end of the playlist.
 		url = "https://access-alexa-na.amazon.com/v1/avs/audioplayer/playbackIdle"
-	elif requestType.upper() == "INTERRUPTED":
+	elif requestType.upper() == RequestType.INTERRUPTED:
 		# The Playback Interrupted method sends a notification to AVS that the audio player has been interrupted.
 		# Note: The audio player may have been interrupted by a previous stop Directive.
 		url = "https://access-alexa-na.amazon.com/v1/avs/audioplayer/playbackInterrupted"
 	elif requestType.upper() == "PROGRESS_REPORT":
 		# The Playback Progress Report method sends a notification to AVS with the current state of the audio player.
 		url = "https://access-alexa-na.amazon.com/v1/avs/audioplayer/playbackProgressReport"
-	elif requestType.upper() == "STARTED":
+	elif requestType.upper() == RequestType.STARTED:
 		# The Playback Started method sends a notification to AVS that the audio player has started playing.
 		url = "https://access-alexa-na.amazon.com/v1/avs/audioplayer/playbackStarted"
 

@@ -6,6 +6,7 @@ from collections import deque
 import vlc
 
 from basehandler import BaseHandler
+from alexapi.constants import RequestType, PlayerActivity
 
 logger = logging.getLogger(__name__)
 
@@ -190,10 +191,10 @@ class VlcHandler(BaseHandler):
 		if state in [vlc.State.Playing, vlc.State.Stopped, vlc.State.Ended, vlc.State.Error]:
 
 			report = {
-				vlc.State.Playing: ("STARTED", "PLAYING", self.stream_id),
-				vlc.State.Stopped: ("INTERRUPTED", "IDLE", self.stream_id),
-				vlc.State.Ended: ("FINISHED", "IDLE", self.stream_id),
-				vlc.State.Error: ("ERROR", "IDLE", self.stream_id)
+				vlc.State.Playing: (RequestType.STARTED, PlayerActivity.PLAYING, self.stream_id),
+				vlc.State.Stopped: (RequestType.INTERRUPTED, PlayerActivity.IDLE, self.stream_id),
+				vlc.State.Ended: (RequestType.FINISHED, PlayerActivity.IDLE, self.stream_id),
+				vlc.State.Error: (RequestType.ERROR, PlayerActivity.IDLE, self.stream_id)
 			}
 
 			rThread = threading.Thread(target=self.__callback_report, args=report[state])
