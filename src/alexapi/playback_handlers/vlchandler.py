@@ -197,8 +197,7 @@ class VlcHandler(BaseHandler):
 				vlc.State.Error: (RequestType.ERROR, PlayerActivity.IDLE, self.stream_id)
 			}
 
-			rThread = threading.Thread(target=self.__callback_report, args=report[state])
-			rThread.start()
+			self.__callback_report(*report[state])
 
 			if state in [vlc.State.Stopped, vlc.State.Ended, vlc.State.Error]:
 

@@ -186,7 +186,8 @@ class Player(object):
 		if streamId:
 			if streamId in self.progressReportRequired:
 				self.progressReportRequired.remove(streamId)
-				alexa_playback_progress_report_request(requestType, playerActivity, streamId)
+				gThread = threading.Thread(target=alexa_playback_progress_report_request, args=(requestType, playerActivity, streamId))
+				gThread.start()
 
 			if (requestType == RequestType.FINISHED) and (playerActivity == PlayerActivity.IDLE) and (self.playlist_last_item == streamId):
 				gThread = threading.Thread(target=alexa_getnextitem, args=(self.navigation_token,))
