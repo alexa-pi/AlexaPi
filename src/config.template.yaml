@@ -32,6 +32,11 @@ sound:
   media_output_device:
   media_default_volume:
 
+  # Some devices clip off the beginning/end of audio files being played back. The
+  # value is the number of seconds of silence to pad the beginning and end of the audio. Only
+  # the sox handler supports this configuration option.
+  playback_padding: 0
+
 # Amazon Alexa settings
 alexa:
   Client_ID:
