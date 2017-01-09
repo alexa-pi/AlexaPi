@@ -12,7 +12,9 @@ Please update your config according to the [Configuration changes] section on th
 - Now configurable (in the configuration file):
 	- logging level
 - New _hyperion_ platform. Allows status visualization with [Hyperion](https://hyperion-project.org).
-
+- SoX playback handler in addition to the existing VLC handler 
+    - This should fix/improve issues with audio on Orange Pi and CHIP (see also the `playback_padding` config option)
+    - TuneIn support is experimental and will be improved in the future
 
 ### Changed
 - Refactored triggering:
