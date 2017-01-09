@@ -159,7 +159,7 @@ class Player(object):
 			if (url.find('radiotime.com') != -1):
 				url = self.tunein_playlist(url)
 
-			self.pHandler.queued_play(mrl_fix(url), stream['offsetInMilliseconds'], audio_type='media', streamId=streamId)
+			self.pHandler.queued_play(mrl_fix(url), stream['offsetInMilliseconds'], audio_type='media', stream_id=streamId)
 
 	def play_speech(self, mrl):
 		self.stop()
@@ -169,7 +169,7 @@ class Player(object):
 		self.pHandler.stop()
 
 	def is_playing(self):
-		return self.pHandler.is_playing
+		return self.pHandler.is_playing()
 
 	def get_volume(self):
 		return self.pHandler.volume
