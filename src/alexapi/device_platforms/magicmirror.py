@@ -1,9 +1,8 @@
-from __future__ import print_function
-import time
 import BaseHTTPServer
 import threading
 import urllib2
 import urlparse
+import logging
 
 from baseplatform import BasePlatform
 
@@ -15,11 +14,13 @@ from baseplatform import BasePlatform
 # 	- Update the Magic Mirror display with AlexaPi's status (No connection, idle, listening, processing, speaking)
 # 	- Allow the Magic Mirror to trigger a 'start listening' request
 
+logger = logging.getLogger(__name__)
+
+
 class MagicmirrorPlatform(BasePlatform):
 
 	def __init__(self, config):
-		if config['debug']:
-			print("Initialising Magic Mirror platorm")
+		logger.debug("Initialising Magic Mirror platorm")
 
 		super(MagicmirrorPlatform, self).__init__(config, 'magicmirror')
 
@@ -34,9 +35,8 @@ class MagicmirrorPlatform(BasePlatform):
 		self.serverthread = ""
 
 	def setup(self):
-		if self._config['debug']:
-			print("Setting up Magic Mirror platform")
-			print(time.asctime(), "Magic Mirror HTTP Server - %s:%s" % (self.host_name, self.port_number))
+		logger.debug("Setting up Magic Mirror platform")
+		logger.info("Magic Mirror HTTP Server - %s:%s", self.host_name, self.port_number)
 
 		# Setup http server
 		self.httpd = CallbackHTTPServer((self.host_name, self.port_number), MMHTTPHandler)
@@ -45,14 +45,12 @@ class MagicmirrorPlatform(BasePlatform):
 		self.serverthread.daemon = True
 
 	def indicate_failure(self):
-		if self._config['debug']:
-			print("Indicating Failure")
+		logger.debug("Indicating Failure")
 
 		self.update_mm("failure")
 
 	def indicate_success(self):
-		if self._config['debug']:
-			print("Indicating Success")
+		logger.debug("Indicating Success")
 
 		self.update_mm("success")
 
@@ -60,31 +58,24 @@ class MagicmirrorPlatform(BasePlatform):
 
 		self._trigger_callback = trigger_callback
 
-		if self._config['debug']:
-			print("Starting Magic Mirror platform HTTP Server")
-
+		logger.debug("Starting Magic Mirror platform HTTP Server")
 		self.serverthread.start()
 
-		if self._config['debug']:
-			print("Starting Magic Mirror heartbeat with " + str(self.hb_timer) + " second interval")
-
+		logger.debug("Starting Magic Mirror heartbeat with %s second interval", self.hb_timer)
 		self.mm_heartbeat()
 
 	def indicate_recording(self, state=True):
-		if self._config['debug']:
-			print("Indicate Start Recording" if state else "Indicate Stop Recording")
+		logger.debug("Indicate Start Recording" if state else "Indicate Stop Recording")
 
 		self.update_mm("recording" if state else "idle")
 
 	def indicate_playback(self, state=True):
-		if self._config['debug']:
-			print("Indicate Start Playing" if state else "Indicate Stop Playing")
+		logger.debug("Indicate Start Playing" if state else "Indicate Stop Playing")
 
 		self.update_mm("playback" if state else "idle")
 
 	def indicate_processing(self, state=True):
-		if self._config['debug']:
-			print("Indicate Start Processing" if state else "Indicate Stop Processing")
+		logger.debug("Indicate Start Processing" if state else "Indicate Stop Processing")
 
 		self.update_mm("processing" if state else "idle")
 
@@ -94,17 +85,15 @@ class MagicmirrorPlatform(BasePlatform):
 	def update_mm(self, status):
 		address = ("http://" + self.mm_host + ":" + self.mm_port + "/alexapi?action=AVSSTATUS&status=" + status)
 
-		if self._config['debug']:
-			print("Calling URL: " + address)
+		logger.debug("Calling URL: %s", address)
 
 		try:
 			response = urllib2.urlopen(address).read()
 		except urllib2.URLError, err:
-			print("URLError: ", err.reason)
+			logger.error("URLError: %s", err.reason)
 			return
 
-		if self._config['debug']:
-			print("Response: " + response)
+		logger.debug("Response: %s", response)
 
 	def mm_heartbeat(self):
 		# Check if stop or set next timer
@@ -114,17 +103,15 @@ class MagicmirrorPlatform(BasePlatform):
 
 		address = ("http://" + self.mm_host + ":" + self.mm_port + "/alexapi?action=AVSHB")
 
-		if self._config['debug']:
-			print("Sending MM Heatbeat")
+		logger.debug("Sending MM Heatbeat")
 
 		try:
 			response = urllib2.urlopen(address).read()
 		except urllib2.URLError, err:
-			print("URLError: ", err.reason)
+			logger.error("URLError: %s", err.reason)
 			return
 
-		if self._config['debug']:
-			print("Response: " + response)
+		logger.debug("Response: " + response)
 
 	def http_callback(self, query_dict):
 		if (query_dict['action'][0] == "requestrecord"):
@@ -137,8 +124,7 @@ class MagicmirrorPlatform(BasePlatform):
 			return False
 
 	def cleanup(self):
-		if self._config['debug']:
-			print("Cleaning up Magic Mirror platform")
+		logger.debug("Cleaning up Magic Mirror platform")
 
 		self.httpd.shutdown()
 		self.shutdown = True

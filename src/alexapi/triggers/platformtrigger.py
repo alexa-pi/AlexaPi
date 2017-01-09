@@ -1,9 +1,12 @@
 import time
 import os
 import threading
+import logging
 
 from basetrigger import BaseTrigger
 import alexapi.triggers as triggers
+
+logger = logging.getLogger(__name__)
 
 
 class PlatformTrigger(BaseTrigger):
@@ -66,8 +69,7 @@ class PlatformTrigger(BaseTrigger):
 					pass
 					# play_audio(self._pconfig['long_press']['audio_file'].replace('{resources_path}', resources_path))
 
-				if self._config['debug']:
-					print("-- " + str(self._tconfig['long_press']['duration']) + " second button press detected. Running specified command. --")
+				logger.info("-- " + str(self._tconfig['long_press']['duration']) + " second button press detected. Running specified command.")
 
 				os.system(self._tconfig['long_press']['command'])
 				break

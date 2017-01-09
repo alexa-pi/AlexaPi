@@ -2,6 +2,12 @@
 
 # See https://github.com/alexa-pi/AlexaPi/wiki/Audio-setup-&-debugging
 # to get a better idea of how to set things in here
+
+# Level of log output
+# default: INFO
+# set to DEBUG for verbose logging
+logging: INFO
+
 sound:
   # Name of your ALSA microphone/soundcard in arecord -L
   # you can also try setting it to 'default'

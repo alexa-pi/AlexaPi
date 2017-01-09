@@ -4,16 +4,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
-Please update your config according to the  [Configuration changes] section on the wiki.
+Please update your config according to the [Configuration changes] section on the wiki.
+
+### Added
+- Startup, pre-interaction, post-interaction and shutdown commands. Can be used to adjust shairport-sync volume for example (see `config.template.yaml`)
+- dependency on the _coloredlogs_ Python library
+- Now configurable (in the configuration file):
+	- logging level
 
 ### Changed
 - Refactored triggering:
     - Split into modules. Standalone user triggers are now possible.
     - Each trigger can be enabled / disabled. Voice triggering is therefore now optional (although enabled by default).
     - Pocketsphinx's _threshold_ is now configurable.
-
-### Added
-- Startup, pre-interaction, post-interaction and Shutdown commands. Can be used to adjust shairport-sync volume for example (see config.yaml)
+- Use Python logging instead of prints to stdout
 
 ## [1.3.1] - 2017-01-01
 This is mainly a test of doing bugfix releases.
@@ -58,7 +62,6 @@ This is mainly a test of doing bugfix releases.
 - There is no default command for the _long_press_ feature.
 - Abstracted device platform code into **_device_platforms_** which means we can now support other devices within the same codebase and users can now write their own independent device platform files.
 - Abstracted playback library into **_playback_handlers_** which means we can now support multiple libraries within the same codebase and users can now write their own independent handlers and can route their sound through whatever they want to.
-
 
 ### Removed
 - Temporarily disabled voice confirmation of the _long_press_ feature.

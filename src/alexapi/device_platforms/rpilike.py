@@ -1,11 +1,13 @@
-from __future__ import print_function
 import time
 from abc import ABCMeta
+import logging
 
 from baseplatform import BasePlatform
-import alexapi.bcolors as bcolors
+
+logger = logging.getLogger(__name__)
 
 GPIO = None
+
 
 class RPiLikePlatform(BasePlatform):
 	__metaclass__ = ABCMeta
@@ -63,15 +65,13 @@ class RPiLikePlatform(BasePlatform):
 		if self._trigger_callback:
 			self._trigger_callback(self.force_recording)
 
-		if self._config['debug']:
-			print("{}Button pressed!{}".format(bcolors.OKBLUE, bcolors.ENDC))
+		logger.debug("Button pressed!")
 
 		time.sleep(.5)  # time for the button input to settle down
 		while GPIO.input(self._pconfig['button']) == 0:
 			time.sleep(.1)
 
-		if self._config['debug']:
-			print("{}Button released.{}".format(bcolors.OKBLUE, bcolors.ENDC))
+		logger.debug("Button released.")
 
 		self.button_pressed = False
 

@@ -1,12 +1,13 @@
-from __future__ import print_function
 import threading
 import time
+import logging
 from collections import deque
 
 import vlc
 
-import alexapi.bcolors as bcolors
 from basehandler import BaseHandler
+
+logger = logging.getLogger(__name__)
 
 
 class VlcHandler(BaseHandler):
@@ -42,7 +43,7 @@ class VlcHandler(BaseHandler):
 
 		parametersCommon = [
 			# '--alsa-audio-device=mono'
-			# '--file-logging'
+			# '--file-logger'
 			# '--logfile=vlc-log.txt'
 		]
 
@@ -79,8 +80,7 @@ class VlcHandler(BaseHandler):
 
 	def __play(self, item):
 
-		if self.__config['debug']:
-			print("{}Play_Audio Request for:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, item['url']))
+		logger.debug("Play_Audio Request for: %s", item['url'])
 
 		if not self.play_lock.isSet():
 			self.play_lock.wait()
@@ -185,8 +185,7 @@ class VlcHandler(BaseHandler):
 
 		state = player.get_state()
 
-		if self.__config['debug']:
-			print("{}Player State:{} {}".format(bcolors.OKGREEN, bcolors.ENDC, state))
+		logger.debug("Player State: %s", state)
 
 		if state in [vlc.State.Playing, vlc.State.Stopped, vlc.State.Ended, vlc.State.Error]:
 

@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 
-from __future__ import print_function
 import importlib
 import os
+import logging
 import tempfile
 import signal
 import shutil
@@ -20,14 +20,42 @@ import requests
 from memcache import Client
 
 import webrtcvad
+import coloredlogs
 
 import alexapi.config
-import alexapi.bcolors as bcolors
 import alexapi.tunein as tunein
 import alexapi.triggers as triggers
 
-with open(alexapi.config.filename, 'r') as stream:
-	config = yaml.load(stream)
+logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s')
+coloredlogs.DEFAULT_FIELD_STYLES = {
+	'hostname': {'color': 'magenta'},
+	'programname': {'color': 'cyan'},
+	'name': {'color': 'blue'},
+	'levelname': {'color': 'magenta', 'bold': True},
+	'asctime': {'color': 'green'}
+}
+coloredlogs.DEFAULT_LEVEL_STYLES = {
+	'info': {'color': 'blue'},
+	'critical': {'color': 'red', 'bold': True},
+	'error': {'color': 'red'},
+	'debug': {'color': 'green'},
+	'warning': {'color': 'yellow'}
+}
+
+coloredlogs.DEFAULT_FIELD_STYLES = {
+	'hostname': {'color': 'magenta'},
+	'programname': {'color': 'cyan'},
+	'name': {'color': 'blue'},
+	'levelname': {'color': 'magenta', 'bold': True},
+	'asctime': {'color': 'green'}
+}
+coloredlogs.DEFAULT_LEVEL_STYLES = {
+	'info': {'color': 'blue'},
+	'critical': {'color': 'red', 'bold': True},
+	'error': {'color': 'red'},
+	'debug': {'color': 'green'},
+	'warning': {'color': 'yellow'}
+}
 
 # Get arguments
 parser = optparse.OptionParser()
@@ -41,13 +69,44 @@ parser.add_option('-d', '--debug',
 		action="store_true",
 		default=False,
 		help="display debug messages")
+parser.add_option('--daemon',
+		dest="daemon",
+		action="store_true",
+		default=False,
+		help="Used by initd/systemd start script to reconfigure logging")
 
 cmdopts, cmdargs = parser.parse_args()
 silent = cmdopts.silent
 debug = cmdopts.debug
 
-if 'debug' not in config:
-	config['debug'] = debug
+config_exists = alexapi.config.filename is not None
+
+if config_exists:
+	with open(alexapi.config.filename, 'r') as stream:
+		config = yaml.load(stream)
+
+if debug:
+	log_level = logging.DEBUG
+else:
+	if config_exists:
+		log_level = logging.getLevelName(config.get('logging', 'INFO').upper())
+	else:
+		log_level = logging.getLevelName('INFO')
+
+if cmdopts.daemon:
+	coloredlogs.DEFAULT_LOG_FORMAT = '%(levelname)s: %(message)s'
+else:
+	coloredlogs.DEFAULT_LOG_FORMAT = '%(asctime)s %(levelname)s: %(message)s'
+
+coloredlogs.install(level=log_level)
+alexa_logger = logging.getLogger('alexapi')
+alexa_logger.setLevel(log_level)
+
+logger = logging.getLogger(__name__)
+
+if not config_exists:
+	logger.critical('Can not find configuration file. Exiting...')
+	sys.exit(1)
 
 # Setup event commands
 event_commands = {
@@ -135,8 +194,7 @@ class Player(object):
 				gThread.start()
 
 	def tunein_playlist(self, url):
-		if self.config['debug']:
-			print("TUNE IN URL = {}".format(url))
+		logger.debug("TUNE IN URL = %s", url)
 
 		req = requests.get(url)
 		lines = req.content.split('\n')
@@ -190,13 +248,13 @@ def mrl_fix(url):
 
 
 def internet_on():
-	print("Checking Internet Connection...")
+	logger.info("Checking Internet Connection...")
 	try:
 		requests.get('https://api.amazon.com/auth/o2/token')
-		print("Connection {}OK{}".format(bcolors.OKGREEN, bcolors.ENDC))
+		logger.info("Connection OK")
 		return True
 	except:  # pylint: disable=bare-except
-		print("Connection {}Failed{}".format(bcolors.WARNING, bcolors.ENDC))
+		logger.error("Connection Failed")
 		return False
 
 
@@ -223,8 +281,7 @@ def gettoken():
 
 def alexa_speech_recognizer():
 	# https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/rest/speechrecognizer-requests
-	if debug:
-		print("{}Sending Speech Request...{}".format(bcolors.OKBLUE, bcolors.ENDC))
+	logger.debug("Sending Speech Request...")
 
 	platform.indicate_processing()
 
@@ -266,8 +323,7 @@ def alexa_speech_recognizer():
 def alexa_getnextitem(navigationToken):
 	# https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/rest/audioplayer-getnextitem-request
 
-	if debug:
-		print("{}Sending GetNextItem Request...{}".format(bcolors.OKBLUE, bcolors.ENDC))
+	logger.debug("Sending GetNextItem Request...")
 
 	url = 'https://access-alexa-na.amazon.com/v1/avs/audioplayer/getNextItem'
 	headers = {
@@ -291,8 +347,7 @@ def alexa_playback_progress_report_request(requestType, playerActivity, stream_i
 	# offsetInMilliseconds      Specifies the current position in the track, in milliseconds.
 	# playerActivity            IDLE, PAUSED, or PLAYING
 
-	if debug:
-		print("{}Sending Playback Progress Report Request...{}".format(bcolors.OKBLUE, bcolors.ENDC))
+	logger.debug("Sending Playback Progress Report Request...")
 
 	headers = {
 		'Authorization': 'Bearer %s' % gettoken()
@@ -331,17 +386,15 @@ def alexa_playback_progress_report_request(requestType, playerActivity, stream_i
 
 	response = requests.post(url, headers=headers, data=json.dumps(data))
 	if response.status_code != 204:
-		print("{}(alexa_playback_progress_report_request Response){} {}".format(bcolors.WARNING, bcolors.ENDC, response))
+		logger.warning("(alexa_playback_progress_report_request Response) %s", response)
 	else:
-		if debug:
-			print("{}Playback Progress Report was {}Successful!{}".format(bcolors.OKBLUE, bcolors.OKGREEN, bcolors.ENDC))
+		logger.debug("Playback Progress Report was Successful")
 
 
 def process_response(response):
 	global player
 
-	if debug:
-		print("{}Processing Request Response...{}".format(bcolors.OKBLUE, bcolors.ENDC))
+	logger.debug("Processing Request Response...")
 
 	if response.status_code == 200:
 		data = "Content-Type: " + response.headers['content-type'] + '\r\n\r\n' + response.content
@@ -349,21 +402,18 @@ def process_response(response):
 		for payload in msg.get_payload():
 			if payload.get_content_type() == "application/json":
 				j = json.loads(payload.get_payload())
-				if debug:
-					print("{}JSON String Returned:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, json.dumps(j)))
+				logger.debug("JSON String Returned: %s", json.dumps(j, indent=2))
 			elif payload.get_content_type() == "audio/mpeg":
 				filename = tmp_path + payload.get('Content-ID').strip("<>") + ".mp3"
 				with open(filename, 'wb') as f:
 					f.write(payload.get_payload())
 			else:
-				if debug:
-					print("{}NEW CONTENT TYPE RETURNED: {} {}".format(bcolors.WARNING, bcolors.ENDC, payload.get_content_type()))
+				logger.debug("NEW CONTENT TYPE RETURNED: %s", payload.get_content_type())
 
 		# Now process the response
 		if 'directives' in j['messageBody']:
 			if len(j['messageBody']['directives']) == 0:
-				if debug:
-					print("0 Directives received")
+				logger.debug("0 Directives received")
 
 			for directive in j['messageBody']['directives']:
 				if directive['namespace'] == 'SpeechSynthesizer':
@@ -373,8 +423,7 @@ def process_response(response):
 
 				elif directive['namespace'] == 'SpeechRecognizer':
 					if directive['name'] == 'listen':
-						if debug:
-							print("{}Further Input Expected, timeout in: {} {}ms".format(bcolors.OKBLUE, bcolors.ENDC, directive['payload']['timeoutIntervalInMillis']))
+						logger.debug("Further Input Expected, timeout in: %sms", directive['payload']['timeoutIntervalInMillis'])
 
 						player.play_speech(resources_path + 'beep.wav')
 						timeout = directive['payload']['timeoutIntervalInMillis'] / 116
@@ -404,8 +453,7 @@ def process_response(response):
 
 						player.set_volume(volume)
 
-						if debug:
-							print("new volume = {}".format(volume))
+						logger.debug("new volume = %s", volume)
 
 		# Additional Audio Iten
 		elif 'audioItem' in j['messageBody']:
@@ -414,10 +462,9 @@ def process_response(response):
 		return
 
 	elif response.status_code == 204:
-		if debug:
-			print("{}Request Response is null {}(This is OKAY!){}".format(bcolors.OKBLUE, bcolors.OKGREEN, bcolors.ENDC))
+		logger.debug("Request Response is null (This is OKAY!)")
 	else:
-		print("{}(process_response Error){} Status Code: {}".format(bcolors.WARNING, bcolors.ENDC, response.status_code))
+		logger.info("(process_response Error) Status Code: %s", response.status_code)
 		response.connection.close()
 
 		platform.indicate_failure()
@@ -425,8 +472,7 @@ def process_response(response):
 
 def silence_listener(throwaway_frames, force_record=None):
 
-	if debug:
-		print("Debug: Setting up recording")
+	logger.debug("Setting up recording")
 
 	# Reenable reading microphone raw data
 	inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, config['sound']['input_device'])
@@ -449,8 +495,7 @@ def silence_listener(throwaway_frames, force_record=None):
 	silenceRun = 0
 
 
-	if debug:
-		print("Debug: Start recording")
+	logger.debug("Start recording")
 
 	platform.indicate_recording()
 
@@ -485,8 +530,7 @@ def silence_listener(throwaway_frames, force_record=None):
 			if (numSilenceRuns != 0) and ((silenceRun * VAD_FRAME_MS) > VAD_SILENCE_TIMEOUT):
 				thresholdSilenceMet = True
 
-	if debug:
-		print("Debug: End recording")
+	logger.debug("End recording")
 
 	inp.close()
 
@@ -528,7 +572,7 @@ def trigger_process(trigger):
 				if os.path.isfile(file_path):
 					os.remove(file_path)
 			except Exception as exp: # pylint: disable=broad-except
-				print(exp)
+				logger.warning(exp)
 
 	force_record = None
 	if trigger.event_type in triggers.types_continuous:

@@ -17,7 +17,7 @@ set -e
 NAME="AlexaPi"
 PIDFILE="/run/$NAME/$NAME.pid"
 DAEMON="/usr/bin/python /opt/AlexaPi/src/main.py"
-DAEMON_OPTS=""
+DAEMON_OPTS="--daemon"
 RUN_USER="alexapi"
 RUN_GROUP="alexapi"
 

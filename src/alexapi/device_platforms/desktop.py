@@ -1,8 +1,10 @@
-from __future__ import print_function
 import time
 import threading
+import logging
 
 from baseplatform import BasePlatform
+
+logger = logging.getLogger(__name__)
 
 
 class DesktopPlatform(BasePlatform):
@@ -17,19 +19,19 @@ class DesktopPlatform(BasePlatform):
 		pass
 
 	def indicate_failure(self):
-		print("setup_failure")
+		logger.info("setup_failure")
 
 	def indicate_success(self):
-		print("setup_complete")
+		logger.info("setup_complete")
 
 	def indicate_recording(self, state=True):
-		print("indicate_recording_on " + str(state))
+		logger.info("indicate_recording_on %s", state)
 
 	def indicate_playback(self, state=True):
-		print("indicate_playback " + str(state))
+		logger.info("indicate_playback %s", state)
 
 	def indicate_processing(self, state=True):
-		print("indicate_processing " + str(state))
+		logger.info("indicate_processing %s", state)
 
 	def after_setup(self, trigger_callback=None):
 

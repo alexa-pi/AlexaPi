@@ -1,6 +1,7 @@
-from __future__ import print_function
-
+import logging
 from baseplatform import BasePlatform
+
+logger = logging.getLogger(__name__)
 
 
 class DummyPlatform(BasePlatform):
@@ -9,36 +10,28 @@ class DummyPlatform(BasePlatform):
 		super(DummyPlatform, self).__init__(config, 'dummy')
 
 	def setup(self):
-		if self._pconfig['verbose']:
-			print("setup")
+		logger.debug("setup")
 
 	def indicate_failure(self):
-		if self._pconfig['verbose']:
-			print("setup_failure")
+		logger.debug("setup_failure")
 
 	def indicate_success(self):
-		if self._pconfig['verbose']:
-			print("setup_complete")
+		logger.debug("setup_complete")
 
 	def indicate_recording(self, state=True):
-		if self._pconfig['verbose']:
-			print("indicate_recording_on " + str(state))
+		logger.debug("indicate_recording_on %s", state)
 
 	def indicate_playback(self, state=True):
-		if self._pconfig['verbose']:
-			print("indicate_playback " + str(state))
+		logger.debug("indicate_playback %s", state)
 
 	def indicate_processing(self, state=True):
-		if self._pconfig['verbose']:
-			print("indicate_processing " + str(state))
+		logger.debug("indicate_processing %s", state)
 
 	def after_setup(self, trigger_callback=None): # pylint: disable=unused-argument
-		if self._pconfig['verbose']:
-			print("after_setup")
+		logger.debug("after_setup")
 
 	def force_recording(self):
 		return False
 
 	def cleanup(self):
-		if self._pconfig['verbose']:
-			print("cleanup")
+		logger.debug("cleanup")

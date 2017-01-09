@@ -21,7 +21,6 @@ try:
 except ImportError:
     import xml.etree.ElementTree as elementtree
 
-logging.basicConfig(filename='tunein.log', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 

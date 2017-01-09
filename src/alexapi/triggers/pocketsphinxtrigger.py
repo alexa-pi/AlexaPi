@@ -1,5 +1,6 @@
 import os
 import threading
+import logging
 
 import alsaaudio
 from pocketsphinx import get_model_path
@@ -7,6 +8,8 @@ from pocketsphinx.pocketsphinx import Decoder
 
 from basetrigger import BaseTrigger
 import alexapi.triggers as triggers
+
+logger = logging.getLogger(__name__)
 
 
 class PocketsphinxTrigger(BaseTrigger):
@@ -32,9 +35,8 @@ class PocketsphinxTrigger(BaseTrigger):
 		ps_config.set_string('-keyphrase', self._tconfig['phrase'])
 		ps_config.set_float('-kws_threshold', float(self._tconfig['threshold']))
 
-		# Hide the VERY verbose logging information
-		# TODO: temporary here until the logging PR is merged - check if we need to change this
-		if not self._config['debug']:
+		# Hide the VERY verbose logging information when not in debug
+		if logging.getLogger('alexapi').getEffectiveLevel() != logging.DEBUG:
 			ps_config.set_string('-logfn', '/dev/null')
 
 		# Process audio chunk by chunk. On keyword detected perform action and restart search

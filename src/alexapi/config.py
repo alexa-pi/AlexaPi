@@ -1,22 +1,15 @@
-from __future__ import print_function
 import os
-import sys
 
-__fileNames = [
+__file_names = [
 	os.path.join(os.path.realpath(__file__).rstrip(os.path.basename(__file__)), '..', 'config.yaml'),
 	'/etc/opt/AlexaPi/config.yaml',
 ]
 
-filename = ''
-for fn in __fileNames:
+filename = None
+for fn in __file_names:
 	if os.path.isfile(fn):
 		filename = fn
 		break
-
-if filename == '':
-	print('ERROR: No configuration file found!')
-	sys.exit(1)
-
 
 def set_variable(variable, value):
 	# WARNING: this is a silly implementation that doesn't care about YAML sections,
