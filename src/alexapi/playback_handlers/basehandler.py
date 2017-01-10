@@ -7,12 +7,15 @@ import alexapi.bcolors as bcolors
 from alexapi.constants import RequestType, PlayerActivity
 
 
-class PlaybackAudioType:
+class PlaybackAudioType(object):
 	SPEECH = 'speech'
 	MEDIA = 'media'
 
+	def __init__(self):
+		pass
 
-class PlaybackItem:
+
+class PlaybackItem(object):
 	def __init__(self, url, offset, audio_type, stream_id):
 		self.url = url
 		self.offset = offset
@@ -20,11 +23,12 @@ class PlaybackItem:
 		self.stream_id = stream_id
 
 
-class PlaybackLock:
+class PlaybackLock(object):
 	def __init__(self):
 		# This has inverted logic
 		self.play_lock = threading.Event()
 		self.play_lock.set()
+		self.is_playing = False
 
 	def acquire(self):
 		if not self.play_lock.isSet():
@@ -37,7 +41,7 @@ class PlaybackLock:
 		self.is_playing = False
 
 
-class BaseHandler:
+class BaseHandler(object):
 	__metaclass__ = ABCMeta
 
 	def __init__(self, config, callback_report):
@@ -51,8 +55,6 @@ class BaseHandler:
 		self.processing_queue = False
 
 		self.stream_id = None
-		self.is_playing = False
-
 		self.play_lock = PlaybackLock()
 
 	@abstractmethod
@@ -171,4 +173,3 @@ class BaseHandler:
 				time.sleep(0.5)
 
 		self.processing_queue = False
-
