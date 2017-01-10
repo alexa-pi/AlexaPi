@@ -119,7 +119,7 @@ event_commands = {
 if 'event_commands' in config:
 	event_commands.update(config['event_commands'])
 
-im = importlib.import_module('alexapi.device_platforms.' + config['platform']['device'], package=None)
+im = importlib.import_module('alexapi.device_platforms.' + config['platform']['device'] + 'platform', package=None)
 cl = getattr(im, config['platform']['device'].capitalize() + 'Platform')
 platform = cl(config)
 

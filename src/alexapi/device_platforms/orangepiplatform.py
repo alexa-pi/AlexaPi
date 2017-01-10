@@ -3,7 +3,7 @@ import threading
 
 from pyA20.gpio import gpio as GPIO
 
-from rpilike import RPiLikePlatform
+from rpilikeplatform import RPiLikePlatform
 
 
 class OrangepiPlatform(RPiLikePlatform):
