@@ -208,7 +208,6 @@ class Player(object):
 
 # Playback handler
 def playback_callback(requestType, playerActivity, streamId):
-	global player
 
 	return player.playback_callback(requestType, playerActivity, streamId)
 
@@ -392,8 +391,6 @@ def alexa_playback_progress_report_request(requestType, playerActivity, stream_i
 
 
 def process_response(response):
-	global player
-
 	logger.debug("Processing Request Response...")
 
 	if response.status_code == 200:
@@ -543,7 +540,6 @@ def silence_listener(throwaway_frames, force_record=None):
 trigger_thread = None
 def trigger_callback(trigger):
 	global trigger_thread
-	global event_commands
 
 	triggers.disable()
 
@@ -553,8 +549,6 @@ def trigger_callback(trigger):
 
 
 def trigger_process(trigger):
-	global player
-
 	if event_commands['pre_interaction']:
 		subprocess.Popen(event_commands['pre_interaction'], shell=True, stdout=subprocess.PIPE)
 
