@@ -56,7 +56,7 @@ read -r -p "Your OS [${OS_default}]: " OS
 
 if [ "${OS}" == "" ]; then
     OS=${OS_default}
-elif [ ! -f "./inc/${OS}.sh" ]; then
+elif [ ! -f "./inc/os/${OS}.sh" ]; then
     echo "Incorrect value. Exiting."
     exit
 fi
@@ -72,7 +72,7 @@ read -r -p "Your device [${DEVICE_default}]: " DEVICE
 
 if [ "${DEVICE}" == "" ]; then
     DEVICE=${DEVICE_default}
-elif [ "${DEVICE}" != "other" ] && [ ! -f "./inc/${DEVICE}.sh" ]; then
+elif [ "${DEVICE}" != "other" ] && [ ! -f "./inc/device/${DEVICE}.sh" ]; then
     echo "Incorrect value. Exiting."
     exit
 fi
@@ -80,11 +80,11 @@ fi
 source ./inc/common.sh
 
 # shellcheck disable=SC1090
-source ./inc/${OS}.sh
+source ./inc/os/${OS}.sh
 
 if [ "${DEVICE}" != "other" ]; then
     # shellcheck disable=SC1090
-    source ./inc/${DEVICE}.sh
+    source ./inc/device/${DEVICE}.sh
 fi
 
 if [ "$ALEXASRC_DIRECTORY" == "$ALEXASRC_DIRECTORY_CORRECT" ]; then
