@@ -1,10 +1,13 @@
 from abc import ABCMeta, abstractmethod
 import threading
+import logging
 import time
 from collections import deque
 
-import alexapi.bcolors as bcolors
 from alexapi.constants import RequestType, PlayerActivity
+
+
+logger = logging.getLogger(__name__)
 
 
 class PlaybackAudioType(object):
@@ -81,34 +84,24 @@ class BaseHandler(object):
 	def on_set_media_volume(self, volume):
 		pass
 
-	def report_play(self, debug_msg=None):
-		if self.__config['debug'] and debug_msg:
-			print("{}Started play:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, debug_msg))
-
+	def report_play(self, debug_msg=''):
+		logger.debug('Started play. %s', debug_msg)
 		self.__callback_report(RequestType.STARTED, PlayerActivity.PLAYING, self.stream_id)
 
-	def report_stop(self, debug_msg=None):
-		if self.__config['debug'] and debug_msg:
-			print("{}Stopped play:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, debug_msg))
-
+	def report_stop(self, debug_msg=''):
+		logger.debug('Stopped play. %s', debug_msg)
 		self.__callback_report(RequestType.INTERRUPTED, PlayerActivity.IDLE, self.stream_id)
 
-	def report_finish(self, debug_msg=None):
-		if self.__config['debug'] and debug_msg:
-			print("{}Finished play:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, debug_msg))
-
+	def report_finish(self, debug_msg=''):
+		logger.debug('Finished play. %s', debug_msg)
 		self.__callback_report(RequestType.FINISHED, PlayerActivity.IDLE, self.stream_id)
 
-	def report_error(self, debug_msg=None):
-		if self.__config['debug'] and debug_msg:
-			print("{}Error attempting play:{} {}".format(bcolors.FAIL, bcolors.ENDC, debug_msg))
-
+	def report_error(self, debug_msg=''):
+		logger.debug('Error attempting play. %s', debug_msg)
 		self.__callback_report(RequestType.ERROR, PlayerActivity.IDLE, self.stream_id)
 
 	def setup(self):
-		if self.__config['debug']:
-			print("{}Setting up playback handler:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, self.__class__.__name__))
-
+		logger.debug('Setting up playback handler: %s', self.__class__.__name__)
 		self.on_setup()
 
 	def is_playing(self):
@@ -130,31 +123,25 @@ class BaseHandler(object):
 		self.__play(item)
 
 	def stop(self):
+		logger.debug('Stopping audio play')
 		self.queue.clear()
 		self.on_stop()
 		self.play_lock.release()
 
 	def cleanup(self):
-		if self.__config['debug']:
-			print("{}Cleaning up playback handler{}".format(bcolors.OKBLUE, bcolors.ENDC))
-
+		logger.debug('Cleaning up playback handler')
 		self.on_cleanup()
 
 	def set_volume(self, volume):
-		if self.__config['debug']:
-			print("{}Setting volume to:{} {}%".format(bcolors.OKBLUE, bcolors.ENDC, volume))
-
+		logger.debug('Setting volume to: %s', volume)
 		self.on_set_volume(volume)
 
 	def set_media_volume(self, volume):
-		if self.__config['debug']:
-			print("{}Setting media volume to:{} {}%".format(bcolors.OKBLUE, bcolors.ENDC, volume))
-
+		logger.debug('Setting media volume to: %s', volume)
 		self.on_set_media_volume(volume)
 
 	def __play(self, item):
-		if self.__config['debug']:
-			print("{}Play_Audio Request for:{} {}".format(bcolors.OKBLUE, bcolors.ENDC, item.url))
+		logger.debug('Playing audio: %s', item.url)
 
 		self.play_lock.acquire()
 		self.stream_id = item.stream_id

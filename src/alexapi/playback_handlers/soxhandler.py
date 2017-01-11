@@ -70,7 +70,7 @@ class SoxHandler(BaseHandler):
 			self.report_finish()
 
 	def on_stop(self):
-		stop_err = None
+		stop_err = ''
 		if self.proc:
 			try:
 				self.proc.kill()
