@@ -13,7 +13,8 @@ class BasePlatform:
 		if config['platforms']['common']:
 			self._pconfig = config['platforms']['common']
 
-		self._pconfig.update(config['platforms'][platform_name])
+		if config['platforms'][platform_name]:
+			self._pconfig.update(config['platforms'][platform_name])
 
 	@abstractmethod
 	def setup(self):

@@ -139,8 +139,6 @@ platforms:
     min_seconds_to_record: 3
 
   dummy:
-    # whether to print messages when methods are called
-    verbose: false
 
   magicmirror:
     # Magic Mirror - github.com/MichMich/MagicMirror
