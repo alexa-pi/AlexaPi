@@ -23,4 +23,4 @@ install:
 script:
   - pylint --rcfile=pylintrc --ignore=tunein.py src/auth_web.py src/main.py src/alexapi
   - python -c "import yaml; yaml.load(open('src/config.template.yaml'))"
-  - cd src/scripts && shellcheck -e 2164 ./inc/*.sh ./*.sh
+  - cd src/scripts && shellcheck -e 2164 ./inc/*.sh ./inc/os/*.sh ./inc/device/*.sh ./*.sh
