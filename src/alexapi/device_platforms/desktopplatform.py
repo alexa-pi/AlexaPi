@@ -37,9 +37,10 @@ class DesktopPlatform(BasePlatform):
 
 		self._trigger_callback = trigger_callback
 
-		self.trigger_thread = DesktopPlatformTriggerThread(self, trigger_callback)
-		self.trigger_thread.setDaemon(True)
-		self.trigger_thread.start()
+		if self._trigger_callback:
+			self.trigger_thread = DesktopPlatformTriggerThread(self, trigger_callback)
+			self.trigger_thread.setDaemon(True)
+			self.trigger_thread.start()
 
 	def force_recording(self):
 		return time.time() - self.started < self._pconfig['min_seconds_to_record']

@@ -46,8 +46,9 @@ class RPiLikePlatform(BasePlatform):
 
 		self._trigger_callback = trigger_callback
 
-		# threaded detection of button press
-		GPIO.add_event_detect(self._pconfig['button'], GPIO.FALLING, callback=self.detect_button, bouncetime=100)
+		if self._trigger_callback:
+			# threaded detection of button press
+			GPIO.add_event_detect(self._pconfig['button'], GPIO.FALLING, callback=self.detect_button, bouncetime=100)
 
 	def indicate_recording(self, state=True):
 		GPIO.output(self._pconfig['rec_light'], GPIO.HIGH if state else GPIO.LOW)
@@ -62,8 +63,7 @@ class RPiLikePlatform(BasePlatform):
 	def detect_button(self, channel=None): # pylint: disable=unused-argument
 		self.button_pressed = True
 
-		if self._trigger_callback:
-			self._trigger_callback(self.force_recording)
+		self._trigger_callback(self.force_recording)
 
 		logger.debug("Button pressed!")
 

@@ -22,9 +22,10 @@ class OrangepiPlatform(RPiLikePlatform):
 
 		self._trigger_callback = trigger_callback
 
-		thread = threading.Thread(target=self.wait_for_button, args=())
-		thread.daemon = True
-		thread.start()
+		if self._trigger_callback:
+			thread = threading.Thread(target=self.wait_for_button, args=())
+			thread.daemon = True
+			thread.start()
 
 	def wait_for_button(self):
 		while True:
