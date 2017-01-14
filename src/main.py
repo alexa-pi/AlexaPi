@@ -219,12 +219,11 @@ def mrl_fix(url):
 
 
 def internet_on():
-	logger.info("Checking Internet Connection...")
 	try:
 		requests.get('https://api.amazon.com/auth/o2/token')
 		logger.info("Connection OK")
 		return True
-	except:  # pylint: disable=bare-except
+	except requests.exceptions.RequestException:
 		logger.error("Connection Failed")
 		return False
 
@@ -542,8 +541,9 @@ if __name__ == "__main__":
 	pHandler.setup()
 	platform.setup()
 
+	logger.info("Checking Internet Connection ...")
 	while not internet_on():
-		print(".")
+		time.sleep(1)
 
 	try:
 		token = Token(config['alexa'])
