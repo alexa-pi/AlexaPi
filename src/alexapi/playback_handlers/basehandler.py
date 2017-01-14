@@ -153,10 +153,10 @@ class BaseHandler(object):
 		if reportReady:
 			reportReady.set()
 
-		while len(self.queue):
+		while self.queue:
 			item = self.queue.popleft()
 			self.__play(item)
-			if len(self.queue) > 0:
+			if self.queue:
 				time.sleep(0.5)
 
 		self.processing_queue = False

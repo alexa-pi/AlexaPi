@@ -33,7 +33,7 @@ class PlatformTrigger(BaseTrigger):
 		if (self.event_type in triggers.types_continuous
 			and 'long_press' in self._tconfig
 			and 'command' in self._tconfig['long_press']
-			and len(self._tconfig['long_press']['command']) > 0
+			and self._tconfig['long_press']['command']
 			and 'duration' in self._tconfig['long_press']):
 			self.long_press_setup = True
 
@@ -54,10 +54,10 @@ class PlatformTrigger(BaseTrigger):
 				long_press_thread.start()
 
 	def continuous_callback(self):
-		if self._platform_continuous_callback:
-			return self._platform_continuous_callback()
-		else:
+		if not self._platform_continuous_callback:
 			return False
+
+		return self._platform_continuous_callback()
 
 	def long_press(self):
 		start_time = time.time()
@@ -65,7 +65,7 @@ class PlatformTrigger(BaseTrigger):
 		while self._platform_continuous_callback():
 			if (time.time() - start_time > self._tconfig['long_press']['duration']):
 
-				if ('audio_file' in self._tconfig['long_press']) and (len(self._tconfig['long_press']['audio_file']) > 0):
+				if ('audio_file' in self._tconfig['long_press']) and self._tconfig['long_press']['audio_file']:
 					pass
 					# play_audio(self._pconfig['long_press']['audio_file'].replace('{resources_path}', resources_path))
 

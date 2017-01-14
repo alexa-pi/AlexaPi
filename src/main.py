@@ -184,7 +184,7 @@ class Player(object):
 		lines = req.content.split('\n')
 
 		nurl = self.tunein_parser.parse_stream_url(lines[0])
-		if (len(nurl) != 0):
+		if nurl:
 			return nurl[0]
 
 		return ""
@@ -408,7 +408,7 @@ def process_response(response):
 
 		# Now process the response
 		if 'directives' in j['messageBody']:
-			if len(j['messageBody']['directives']) == 0:
+			if not j['messageBody']['directives']:
 				logger.debug("0 Directives received")
 
 			for directive in j['messageBody']['directives']:
