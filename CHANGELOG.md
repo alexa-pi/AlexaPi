@@ -23,6 +23,7 @@ Please update your config according to the [Configuration changes] section on th
     - Each trigger can be enabled / disabled. Voice triggering is therefore now optional (although enabled by default).
 - Use Python logging instead of prints to stdout
 - Changed default pocketsphinx's threshold in the config template from 1e-5 to 1e-10, which should bring better trigger word recognition with hopefully no (or very few) _false triggers_
+- The setup doesn't ask about enabling automatic restart of AlexaPi anymore. It can be enabled manually as described in the [Restart on crashes](https://github.com/alexa-pi/AlexaPi/wiki/Restart-on-crashes) section in the [Documentation].
 
 ### Removed
 - useless dependency on memcached; if you haven't used it for anything else, you can safely disable it and uninstall:

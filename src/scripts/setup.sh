@@ -103,12 +103,7 @@ if [ "$ALEXASRC_DIRECTORY" == "$ALEXASRC_DIRECTORY_CORRECT" ]; then
             init_type="1"
         fi
 
-        read -r -p "Would you like to have AlexaPi restart when it crashes? (y/N)? " monitorAlexa
-        if [ "$monitorAlexa" == "y" ] || [ "$monitorAlexa" == "Y" ]; then
-            monitorAlexa=true
-        else
-            monitorAlexa=false
-        fi
+        monitorAlexa=false
 
         create_user
         gpio_permissions
