@@ -76,7 +76,7 @@ triggers:
     voice_confirm: true
 
     phrase: "alexa"
-    threshold: 1e-5
+    threshold: 1e-10
 
 # Commands to run before and after an interaction begins. Leave empty to disable.
 event_commands:

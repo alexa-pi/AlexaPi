@@ -11,6 +11,7 @@ Please update your config according to the [Configuration changes] section on th
 - dependency on the _coloredlogs_ Python library
 - Now configurable (in the configuration file):
 	- logging level
+	- pocketsphinx's threshold
 - New _hyperion_ platform. Allows status visualization with [Hyperion](https://hyperion-project.org).
 - SoX playback handler in addition to the existing VLC handler 
     - This should fix/improve issues with audio on Orange Pi and CHIP (see also the `playback_padding` config option)
@@ -20,8 +21,8 @@ Please update your config according to the [Configuration changes] section on th
 - Refactored triggering:
     - Split into modules. Standalone user triggers are now possible.
     - Each trigger can be enabled / disabled. Voice triggering is therefore now optional (although enabled by default).
-    - Pocketsphinx's _threshold_ is now configurable.
 - Use Python logging instead of prints to stdout
+- Changed default pocketsphinx's threshold in the config template from 1e-5 to 1e-10, which should bring better trigger word recognition with hopefully no (or very few) _false triggers_
 
 ### Removed
 - useless dependency on memcached; if you haven't used it for anything else, you can safely disable it and uninstall:
