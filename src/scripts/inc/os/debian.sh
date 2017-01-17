@@ -2,7 +2,7 @@
 
 function install_os {
     apt-get update
-    apt-get install curl git python-dev python-setuptools python-pip swig libasound2-dev libpulse-dev vlc-nox memcached sox libsox-fmt-mp3 -y
+    apt-get install curl git python-dev python-setuptools python-pip swig libasound2-dev libpulse-dev vlc-nox sox libsox-fmt-mp3 -y
 }
 
 function install_shairport-sync {

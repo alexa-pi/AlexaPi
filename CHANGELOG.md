@@ -23,6 +23,13 @@ Please update your config according to the [Configuration changes] section on th
     - Pocketsphinx's _threshold_ is now configurable.
 - Use Python logging instead of prints to stdout
 
+### Removed
+- useless dependency on memcached; if you haven't used it for anything else, you can safely disable it and uninstall:
+    - `systemctl stop memcached`
+    - `pip uninstall python-memcached`
+    - (Debian) `sudo apt-get remove memcached`
+    - (Arch Linux) `sudo pacman -R memcached`
+
 ## [1.3.1] - 2017-01-01
 This is mainly a test of doing bugfix releases.
 

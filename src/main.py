@@ -17,8 +17,6 @@ import subprocess
 import yaml
 import alsaaudio
 import requests
-from memcache import Client
-
 import webrtcvad
 import coloredlogs
 
@@ -217,10 +215,7 @@ cl = getattr(im, config['sound']['playback_handler'].capitalize() + 'Handler')
 pHandler = cl(config, playback_callback)
 player = Player(config, platform, pHandler)
 
-# Setup
-recorded = False
-servers = ["127.0.0.1:11211"]
-mc = Client(servers, debug=1)
+
 path = os.path.realpath(__file__).rstrip(os.path.basename(__file__))
 resources_path = os.path.join(path, 'resources', '')
 tmp_path = os.path.join(tempfile.mkdtemp(prefix='AlexaPi-runtime-'), '')
@@ -258,25 +253,57 @@ def internet_on():
 		return False
 
 
-def gettoken():
-	token = mc.get("access_token")
-	refresh = config['alexa']['refresh_token']
-	if token:
-		return token
-	elif refresh:
+class ConfigurationException(Exception):
+	pass
+
+
+class Token(object):
+
+	_token = ''
+	_timestamp = None
+	_validity = 3570
+
+	def __init__(self, aconfig):
+
+		self._aconfig = aconfig
+
+		if not self._aconfig.get('refresh_token'):
+			logger.critical("AVS refresh_token not found in the configuration file. "
+					"Run the setup again to fix your installation (see project wiki for installation instructions).")
+			raise ConfigurationException
+
+		self.renew()
+
+	def __str__(self):
+
+		if (not self._timestamp) or (time.time() - self._timestamp > self._validity):
+			logger.debug("AVS token: Expired")
+			self.renew()
+
+		return self._token
+
+	def renew(self):
+
+		logger.info("AVS token: Requesting a new one")
+
 		payload = {
-			"client_id": config['alexa']['Client_ID'],
-			"client_secret": config['alexa']['Client_Secret'],
-			"refresh_token": refresh,
+			"client_id": self._aconfig['Client_ID'],
+			"client_secret": self._aconfig['Client_Secret'],
+			"refresh_token": self._aconfig['refresh_token'],
 			"grant_type": "refresh_token"
 		}
+
 		url = "https://api.amazon.com/auth/o2/token"
-		response = requests.post(url, data=payload)
-		resp = json.loads(response.text)
-		mc.set("access_token", resp['access_token'], 3570)
-		return resp['access_token']
-	else:
-		return False
+		try:
+			response = requests.post(url, data=payload)
+			resp = json.loads(response.text)
+
+			self._token = resp['access_token']
+			self._timestamp = time.time()
+
+			logger.info("AVS token: Obtained successfully")
+		except requests.exceptions.RequestException as exp:
+			logger.critical("AVS token: Failed to obtain a token: " + str(exp))
 
 
 def alexa_speech_recognizer():
@@ -286,7 +313,7 @@ def alexa_speech_recognizer():
 	platform.indicate_processing()
 
 	url = 'https://access-alexa-na.amazon.com/v1/avs/speechrecognizer/recognize'
-	headers = {'Authorization': 'Bearer %s' % gettoken()}
+	headers = {'Authorization': 'Bearer %s' % token}
 	data = {
 		"messageHeader": {
 			"deviceContext": [
@@ -327,7 +354,7 @@ def alexa_getnextitem(navigationToken):
 
 	url = 'https://access-alexa-na.amazon.com/v1/avs/audioplayer/getNextItem'
 	headers = {
-		'Authorization': 'Bearer %s' % gettoken(),
+		'Authorization': 'Bearer %s' % token,
 		'content-type': 'application/json; charset=UTF-8'
 	}
 
@@ -350,7 +377,7 @@ def alexa_playback_progress_report_request(requestType, playerActivity, stream_i
 	logger.debug("Sending Playback Progress Report Request...")
 
 	headers = {
-		'Authorization': 'Bearer %s' % gettoken()
+		'Authorization': 'Bearer %s' % token
 	}
 
 	data = {
@@ -610,9 +637,15 @@ if __name__ == "__main__":
 	while not internet_on():
 		print(".")
 
-	if not gettoken():
+	try:
+		token = Token(config['alexa'])
+
+		if not str(token):
+			raise RuntimeError
+
+	except (ConfigurationException, RuntimeError):
 		platform.indicate_failure()
-		sys.exit()
+		sys.exit(1)
 
 	platform.indicate_success()
 
