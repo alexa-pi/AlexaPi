@@ -50,8 +50,8 @@ OS_default="debian"
 DEVICE_default="raspberrypi"
 
 echo "Which operating system are you using?"
-echo "debian        - Debian, Raspbian, Armbian, Ubuntu or other Debian-based"
-echo "archlinux     - Arch Linux or Arch Linux-based"
+printf "%15s - %s\n" "debian" "Debian, Raspbian, Armbian, Ubuntu or other Debian-based"
+printf "%15s - %s\n" "archlinux" "Arch Linux or Arch Linux-based"
 read -r -p "Your OS [${OS_default}]: " OS
 
 if [ "${OS}" == "" ]; then
@@ -62,17 +62,20 @@ elif [ ! -f "./inc/os/${OS}.sh" ]; then
 fi
 
 echo "Which device are you using?"
-echo "raspberrypi   - all Raspberry Pi variants"
-echo "orangepi      - Orange Pi or another H3 based board"
-echo "chip          - C.H.I.P."
-echo "magicmirror   - Integrating with Magic Mirror project (MMM-AlexaPi)"
-echo "hyperion      - Integrate with Hyperion Ambient Lightning Software"
-echo "other         - other SBCs, desktops, or anything else"
+cd inc/device
+for deviceFile in *.sh; do
+    deviceName="${deviceFile/.sh/}"
+    deviceDescription=$(grep -P -o -e "(?<=DESCRIPTION=\")(.*)(?=\")" "${deviceFile}")
+
+    printf "%15s - %s\n" "${deviceName}" "${deviceDescription}"
+done
+cd "${SCRIPT_DIRECTORY}"
+
 read -r -p "Your device [${DEVICE_default}]: " DEVICE
 
 if [ "${DEVICE}" == "" ]; then
     DEVICE=${DEVICE_default}
-elif [ "${DEVICE}" != "other" ] && [ ! -f "./inc/device/${DEVICE}.sh" ]; then
+elif [ ! -f "./inc/device/${DEVICE}.sh" ]; then
     echo "Incorrect value. Exiting."
     exit
 fi
@@ -82,10 +85,8 @@ source ./inc/common.sh
 # shellcheck disable=SC1090
 source ./inc/os/${OS}.sh
 
-if [ "${DEVICE}" != "other" ]; then
-    # shellcheck disable=SC1090
-    source ./inc/device/${DEVICE}.sh
-fi
+# shellcheck disable=SC1090
+source ./inc/device/${DEVICE}.sh
 
 if [ "$ALEXASRC_DIRECTORY" == "$ALEXASRC_DIRECTORY_CORRECT" ]; then
 
@@ -141,9 +142,7 @@ else
     run_pip install --no-cache-dir -r ./requirements.txt
 fi
 
-if [ "${DEVICE}" != "other" ]; then
-    install_device
-fi
+install_device
 
 case $shairport in
         [nN] ) ;;
@@ -194,9 +193,7 @@ case ${config_action} in
 
 esac
 
-if [ "${DEVICE}" != "other" ]; then
-    install_device_config
-fi
+install_device_config
 
 declare -A config_defaults
 config_defaults[Device_Type_ID]=$(config_get Device_Type_ID)

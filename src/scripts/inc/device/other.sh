@@ -1,12 +1,12 @@
 #!/bin/bash
 
 # shellcheck disable=SC2034
-DESCRIPTION="Integrating with Magic Mirror project (MMM-AlexaPi)"
+DESCRIPTION="other SBCs, desktops, or anything else"
 
 function install_device {
     :
 }
 
 function install_device_config {
-    config_set 'device' 'magicmirror'
+    :
 }

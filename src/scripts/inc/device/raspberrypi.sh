@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# shellcheck disable=SC2034
+DESCRIPTION="all Raspberry Pi variants"
+
 function install_device {
     run_pip install RPi.GPIO
 
