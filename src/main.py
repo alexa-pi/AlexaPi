@@ -631,14 +631,14 @@ if __name__ == "__main__":
 		platform.indicate_failure()
 		sys.exit(1)
 
-	platform.indicate_success()
+	platform_trigger_callback = triggers.triggers['platform'].platform_callback if 'platform' in triggers.triggers else None
+	platform.after_setup(platform_trigger_callback)
+	triggers.enable()
 
 	if not silent:
 		player.play_speech(resources_path + "hello.mp3")
 
-	platform_trigger_callback = triggers.triggers['platform'].platform_callback if 'platform' in triggers.triggers else None
-	platform.after_setup(platform_trigger_callback)
-	triggers.enable()
+	platform.indicate_success()
 
 	while True:
 		time.sleep(1)
