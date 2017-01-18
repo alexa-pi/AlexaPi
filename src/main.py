@@ -428,7 +428,6 @@ def process_response(response):
 			for directive in j['messageBody']['directives']:
 				if directive['namespace'] == 'SpeechSynthesizer':
 					if directive['name'] == 'speak':
-						platform.indicate_recording(False)
 						player.play_speech(mrl_fix("file://" + tmp_path + directive['payload']['audioContent'].lstrip("cid:") + ".mp3"))
 
 				elif directive['namespace'] == 'SpeechRecognizer':
