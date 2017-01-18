@@ -22,6 +22,7 @@ import alexapi.config
 import alexapi.tunein as tunein
 import alexapi.capture
 import alexapi.triggers as triggers
+from alexapi.exceptions import ConfigurationException
 from alexapi.constants import RequestType, PlayerActivity
 
 logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s')
@@ -226,10 +227,6 @@ def internet_on():
 	except:  # pylint: disable=bare-except
 		logger.error("Connection Failed")
 		return False
-
-
-class ConfigurationException(Exception):
-	pass
 
 
 class Token(object):
