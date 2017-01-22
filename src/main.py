@@ -15,13 +15,12 @@ import email
 import subprocess
 
 import yaml
-import alsaaudio
 import requests
-import webrtcvad
 import coloredlogs
 
 import alexapi.config
 import alexapi.tunein as tunein
+import alexapi.capture
 import alexapi.triggers as triggers
 from alexapi.constants import RequestType, PlayerActivity
 
@@ -205,15 +204,6 @@ path = os.path.realpath(__file__).rstrip(os.path.basename(__file__))
 resources_path = os.path.join(path, 'resources', '')
 tmp_path = os.path.join(tempfile.mkdtemp(prefix='AlexaPi-runtime-'), '')
 
-vad = webrtcvad.Vad(2)
-
-# constants
-VAD_SAMPLERATE = 16000
-VAD_FRAME_MS = 30
-VAD_PERIOD = (VAD_SAMPLERATE / 1000) * VAD_FRAME_MS
-VAD_SILENCE_TIMEOUT = 1000
-VAD_THROWAWAY_FRAMES = 10
-MAX_RECORDING_LENGTH = 8
 MAX_VOLUME = 100
 MIN_VOLUME = 30
 
@@ -436,7 +426,7 @@ def process_response(response):
 
 						player.play_speech(resources_path + 'beep.wav')
 						timeout = directive['payload']['timeoutIntervalInMillis'] / 116
-						silence_listener(timeout)
+						capture.silence_listener(timeout)
 
 						# now process the response
 						alexa_speech_recognizer()
@@ -478,77 +468,6 @@ def process_response(response):
 
 		platform.indicate_failure()
 
-
-def silence_listener(throwaway_frames, force_record=None):
-
-	logger.debug("Setting up recording")
-
-	# Reenable reading microphone raw data
-	inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, config['sound']['input_device'])
-	inp.setchannels(1)
-	inp.setrate(VAD_SAMPLERATE)
-	inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
-	inp.setperiodsize(VAD_PERIOD)
-	audio = ""
-
-	start = time.time()
-
-	do_VAD = True
-	if force_record and not force_record[1]:
-		do_VAD = False
-
-	# Buffer as long as we haven't heard enough silence or the total size is within max size
-	thresholdSilenceMet = False
-	frames = 0
-	numSilenceRuns = 0
-	silenceRun = 0
-
-
-	logger.debug("Start recording")
-
-	platform.indicate_recording()
-
-	if do_VAD:
-		# do not count first 10 frames when doing VAD
-		while frames < throwaway_frames:  # VAD_THROWAWAY_FRAMES):
-			length, data = inp.read()
-			frames = frames + 1
-			if length:
-				audio += data
-
-	# now do VAD
-	while (force_record and force_record[0]()) \
-			or (do_VAD and (thresholdSilenceMet is False) and ((time.time() - start) < MAX_RECORDING_LENGTH)):
-
-		length, data = inp.read()
-		if length:
-			audio += data
-
-			if do_VAD and (length == VAD_PERIOD):
-				isSpeech = vad.is_speech(data, VAD_SAMPLERATE)
-
-				if not isSpeech:
-					silenceRun += 1
-				else:
-					silenceRun = 0
-					numSilenceRuns += 1
-
-		if do_VAD:
-			# only count silence runs after the first one
-			# (allow user to speak for total of max recording length if they haven't said anything yet)
-			if (numSilenceRuns != 0) and ((silenceRun * VAD_FRAME_MS) > VAD_SILENCE_TIMEOUT):
-				thresholdSilenceMet = True
-
-	logger.debug("End recording")
-
-	inp.close()
-
-	platform.indicate_recording(False)
-
-	with open(tmp_path + 'recording.wav', 'w') as rf:
-		rf.write(audio)
-
-
 trigger_thread = None
 def trigger_callback(trigger):
 	global trigger_thread
@@ -584,7 +503,7 @@ def trigger_process(trigger):
 	if trigger.event_type in triggers.types_continuous:
 		force_record = (trigger.continuous_callback, trigger.event_type in triggers.types_vad)
 
-	silence_listener(VAD_THROWAWAY_FRAMES, force_record=force_record)
+	capture.silence_listener(force_record=force_record)
 	alexa_speech_recognizer()
 
 	triggers.enable()
@@ -611,6 +530,9 @@ if __name__ == "__main__":
 
 	if event_commands['startup']:
 		subprocess.Popen(event_commands['startup'], shell=True, stdout=subprocess.PIPE)
+
+	capture = alexapi.capture.Capture(config, tmp_path)
+	capture.setup(platform.indicate_recording)
 
 	triggers.init(config, trigger_callback)
 	triggers.setup()
