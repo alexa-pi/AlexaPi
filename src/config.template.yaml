@@ -10,8 +10,7 @@ logging: INFO
 
 sound:
   # Name of your ALSA microphone/soundcard in arecord -L
-  # you can also try setting it to 'default'
-  input_device: "plughw:1"
+  input_device: "default"
 
   playback_handler: "vlc"
 
