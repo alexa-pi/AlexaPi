@@ -16,6 +16,7 @@ Please update your config according to the [Configuration changes] section on th
 - SoX playback handler in addition to the existing VLC handler 
     - This should fix/improve issues with audio on Orange Pi and CHIP (see also the `playback_padding` config option)
     - TuneIn support is experimental and will be improved in the future
+- Validation of the `input_device` configuration option. If the device is considered invalid, AlexaPi exists with a list of valid options for you to choose. Can be overriden by a new option `allow_unlisted_input_device`.
 
 ### Changed
 - Refactored triggering:

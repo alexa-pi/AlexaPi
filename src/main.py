@@ -528,7 +528,12 @@ if __name__ == "__main__":
 	if event_commands['startup']:
 		subprocess.Popen(event_commands['startup'], shell=True, stdout=subprocess.PIPE)
 
-	capture = alexapi.capture.Capture(config, tmp_path)
+	try:
+		capture = alexapi.capture.Capture(config, tmp_path)
+	except ConfigurationException as exp:
+		logger.critical(exp)
+		sys.exit(1)
+
 	capture.setup(platform.indicate_recording)
 
 	triggers.init(config, trigger_callback)

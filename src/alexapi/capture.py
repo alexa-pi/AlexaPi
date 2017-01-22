@@ -4,6 +4,8 @@ import time
 import alsaaudio
 import webrtcvad
 
+from alexapi.exceptions import ConfigurationException
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,6 +27,17 @@ class Capture(object):
 	def __init__(self, config, tmp_path):
 		self._config = config
 		self._tmp_path = tmp_path
+
+		self.validate_config()
+
+	def validate_config(self):
+		input_device = self._config['sound']['input_device']
+		input_devices = alsaaudio.pcms(alsaaudio.PCM_CAPTURE)
+
+		if (input_device not in input_devices) and (not self._config['sound']['allow_unlisted_input_device']):
+			raise ConfigurationException(
+				"Your input_device '" + input_device + "' is invalid. Use one of the following:\n"
+				+ '\n'.join(input_devices))
 
 	def setup(self, state_callback):
 		self._vad = webrtcvad.Vad(2)
