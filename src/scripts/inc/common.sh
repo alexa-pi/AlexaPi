@@ -74,7 +74,7 @@ function gpio_permissions {
 
     if [ ! -f ${rulesFile} ]; then
         # shellcheck disable=SC2154
-        cat >${rulesFile} <<EOL
+        cat >${rulesFile} <<'EOL'
 SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c '\
 	chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio;\
 	chown -R root:gpio /sys/devices/virtual/gpio && chmod -R 770 /sys/devices/virtual/gpio;\
