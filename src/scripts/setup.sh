@@ -219,3 +219,11 @@ config_set 'Client_Secret' "${Client_Secret}"
 
 
 run_python ./auth_web.py
+
+echo ""
+echo "######################################################################################################"
+echo "IMPORTANT NOTICE:"
+echo "If you use a desktop OS, you HAVE TO set up your system audio so services like AlexaPi can use it too."
+echo "See https://github.com/alexa-pi/AlexaPi/wiki/Audio-setup-&-debugging#pulseaudio"
+echo "######################################################################################################"
+echo ""
