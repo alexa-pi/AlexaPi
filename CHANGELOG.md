@@ -29,11 +29,15 @@ Please update your config according to the [Configuration changes] section on th
 - The setup doesn't ask about enabling automatic restart of AlexaPi anymore. It can be enabled manually as described in the [Restart on crashes](https://github.com/alexa-pi/AlexaPi/wiki/Restart-on-crashes) section in the [Documentation].
 
 ### Removed
-- useless dependency on memcached; if you haven't used it for anything else, you can safely disable it and uninstall:
-    - `systemctl stop memcached`
-    - `pip uninstall python-memcached`
-    - (Debian) `sudo apt-get remove memcached`
-    - (Arch Linux) `sudo pacman -R memcached`
+- unused dependencies; if you haven't used it for anything else, you can safely disable it and uninstall:
+    - memcached (as of this version)
+        - `systemctl stop memcached`
+        - `pip uninstall python-memcached`
+        - (Debian) `sudo apt-get remove memcached`
+        - (Arch Linux) `sudo pacman -R memcached`
+    - Wave: `pip uninstall Wave`
+    - wsgiref: `pip uninstall wsgiref`
+    - py-getch: `pip uninstall py-getch`
 
 ## [1.3.1] - 2017-01-01
 This is mainly a test of doing bugfix releases.
