@@ -57,12 +57,13 @@ class SoxHandler(BaseHandler):
 		sox_cmd.extend(['pad', self.playback_padding, self.playback_padding])
 
 		self.report_play(' '.join(sox_cmd))
+		play_err = u''
 		try:
 			self.proc = subprocess.Popen(sox_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 			_, stderr = self.proc.communicate()
-			play_err = stderr
+			play_err = stderr.decode()
 		except OSError as ex:
-			play_err = ex.message
+			play_err = str(ex).decode()
 
 		if play_err:
 			self.report_error(play_err)
@@ -75,7 +76,7 @@ class SoxHandler(BaseHandler):
 			try:
 				self.proc.kill()
 			except OSError as ex:
-				stop_err = ex.message
+				stop_err = str(ex)
 		else:
 			stop_err = 'No SoX process to stop'
 

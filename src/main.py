@@ -181,7 +181,7 @@ class Player(object):
 		logger.debug("TUNE IN URL = %s", url)
 
 		req = requests.get(url)
-		lines = req.content.split('\n')
+		lines = req.content.decode().split('\n')
 
 		nurl = self.tunein_parser.parse_stream_url(lines[0])
 		if nurl:
@@ -306,7 +306,7 @@ def alexa_speech_recognizer():
 		}
 	}
 
-	with open(tmp_path + 'recording.wav') as inf:
+	with open(tmp_path + 'recording.wav', 'rb') as inf:
 		files = [
 			('file', ('request', json.dumps(data), 'application/json; charset=UTF-8')),
 			('file', ('audio', inf, 'audio/L16; rate=16000; channels=1'))
@@ -393,8 +393,13 @@ def process_response(response):
 	logger.debug("Processing Request Response...")
 
 	if response.status_code == 200:
-		data = "Content-Type: " + response.headers['content-type'] + '\r\n\r\n' + response.content
-		msg = email.message_from_string(data)
+		try:
+			data = bytes("Content-Type: ", 'utf-8') + bytes(response.headers['content-type'], 'utf-8') + bytes('\r\n\r\n', 'utf-8') + response.content
+			msg = email.message_from_bytes(data) # pylint: disable=no-member
+		except TypeError:
+			data = "Content-Type: " + response.headers['content-type'] + '\r\n\r\n' + response.content
+			msg = email.message_from_string(data)
+
 		for payload in msg.get_payload():
 			if payload.get_content_type() == "application/json":
 				j = json.loads(payload.get_payload())
@@ -402,7 +407,7 @@ def process_response(response):
 			elif payload.get_content_type() == "audio/mpeg":
 				filename = tmp_path + payload.get('Content-ID').strip("<>") + ".mp3"
 				with open(filename, 'wb') as f:
-					f.write(payload.get_payload())
+					f.write(payload.get_payload(decode=True))
 			else:
 				logger.debug("NEW CONTENT TYPE RETURNED: %s", payload.get_content_type())
 

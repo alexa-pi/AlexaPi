@@ -1,4 +1,6 @@
-import CHIP_IO.GPIO as GPIO
+# the library doesn't support python 3 actively (yet hopefully)
+# pylint gives: Unable to import 'CHIP_IO.GPIO' (import-error)
+import CHIP_IO.GPIO as GPIO # pylint: disable=import-error
 
 from .rpilikeplatform import RPiLikePlatform
 

@@ -15,7 +15,7 @@ class Capture(object):
 
 	VAD_SAMPLERATE = 16000
 	VAD_FRAME_MS = 30
-	VAD_PERIOD = (VAD_SAMPLERATE / 1000) * VAD_FRAME_MS
+	VAD_PERIOD = int((VAD_SAMPLERATE / 1000) * VAD_FRAME_MS)
 	VAD_SILENCE_TIMEOUT = 1000
 	VAD_THROWAWAY_FRAMES = 10
 
@@ -55,7 +55,7 @@ class Capture(object):
 		inp.setrate(self.VAD_SAMPLERATE)
 		inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
 		inp.setperiodsize(self.VAD_PERIOD)
-		audio = ""
+		audio = b''
 
 		start = time.time()
 
@@ -112,5 +112,5 @@ class Capture(object):
 		if self._state_callback:
 			self._state_callback(False)
 
-		with open(self._tmp_path + 'recording.wav', 'w') as rf:
+		with open(self._tmp_path + 'recording.wav', 'wb') as rf:
 			rf.write(audio)

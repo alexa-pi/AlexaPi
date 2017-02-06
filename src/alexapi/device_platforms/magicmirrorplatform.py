@@ -1,8 +1,17 @@
-import BaseHTTPServer
-import threading
-import urllib2
-import urlparse
 import logging
+import threading
+
+try:
+	import BaseHTTPServer
+except ImportError:
+	import http.server as BaseHTTPServer
+
+try:
+	from urllib.request import urlopen, URLError
+	import urllib.urlparse as urlparse
+except ImportError:
+	from urllib2 import urlopen, URLError
+	import urlparse
 
 from .baseplatform import BasePlatform
 
@@ -31,8 +40,8 @@ class MagicmirrorPlatform(BasePlatform):
 		self.hb_timer = self._pconfig['hb_timer']
 
 		self.shutdown = False
-		self.httpd = ""
-		self.serverthread = ""
+		self.httpd = None
+		self.serverthread = None
 
 	def setup(self):
 		logger.debug("Setting up Magic Mirror platform")
@@ -88,8 +97,8 @@ class MagicmirrorPlatform(BasePlatform):
 		logger.debug("Calling URL: %s", address)
 
 		try:
-			response = urllib2.urlopen(address).read()
-		except urllib2.URLError, err:
+			response = urlopen(address).read()
+		except URLError as err:
 			logger.error("URLError: %s", err.reason)
 			return
 
@@ -106,8 +115,8 @@ class MagicmirrorPlatform(BasePlatform):
 		logger.debug("Sending MM Heatbeat")
 
 		try:
-			response = urllib2.urlopen(address).read()
-		except urllib2.URLError, err:
+			response = urlopen(address).read()
+		except URLError as err:
 			logger.error("URLError: %s", err.reason)
 			return
 

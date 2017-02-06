@@ -3,11 +3,15 @@
 from __future__ import print_function
 import os
 import json
-import urllib
 import socket
 import yaml
 import cherrypy
 import requests
+
+try:
+	from urllib.parse import quote
+except ImportError:
+	from urllib import quote
 
 import alexapi.config
 
@@ -41,7 +45,7 @@ class Start(object):
 		raise cherrypy.HTTPRedirect(prepared_req.url)
 
 	def code(self, var=None, **params):		# pylint: disable=unused-argument
-		code = urllib.quote(cherrypy.request.params['code'])
+		code = quote(cherrypy.request.params['code'])
 		callback = cherrypy.url()
 		payload = {
 			"client_id": config['alexa']['Client_ID'],
