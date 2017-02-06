@@ -4,7 +4,7 @@ import urllib2
 import urlparse
 import logging
 
-from baseplatform import BasePlatform
+from .baseplatform import BasePlatform
 
 # Magic Mirror platform
 # -----------------------------------------------------------------------------------------------------------------

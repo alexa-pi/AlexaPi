@@ -1,5 +1,5 @@
 import subprocess
-from basehandler import BaseHandler, PlaybackAudioType
+from .basehandler import BaseHandler, PlaybackAudioType
 
 MAX_VOLUME_GAIN = 30
 

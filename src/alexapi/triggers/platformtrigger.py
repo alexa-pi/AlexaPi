@@ -3,8 +3,8 @@ import os
 import threading
 import logging
 
-from basetrigger import BaseTrigger
 import alexapi.triggers as triggers
+from .basetrigger import BaseTrigger
 
 logger = logging.getLogger(__name__)
 

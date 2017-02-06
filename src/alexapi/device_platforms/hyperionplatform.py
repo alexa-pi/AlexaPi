@@ -3,7 +3,7 @@ import logging
 import threading
 import websocket
 
-from baseplatform import BasePlatform
+from .baseplatform import BasePlatform
 
 
 logger = logging.getLogger(__name__)

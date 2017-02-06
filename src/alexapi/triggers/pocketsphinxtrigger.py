@@ -6,8 +6,8 @@ import alsaaudio
 from pocketsphinx import get_model_path
 from pocketsphinx.pocketsphinx import Decoder
 
-from basetrigger import BaseTrigger
 import alexapi.triggers as triggers
+from .basetrigger import BaseTrigger
 
 logger = logging.getLogger(__name__)
 

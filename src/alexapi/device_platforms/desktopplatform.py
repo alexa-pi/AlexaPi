@@ -2,7 +2,7 @@ import time
 import threading
 import logging
 
-from baseplatform import BasePlatform
+from .baseplatform import BasePlatform
 
 logger = logging.getLogger(__name__)
 

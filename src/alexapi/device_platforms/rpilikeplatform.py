@@ -2,7 +2,7 @@ import time
 from abc import ABCMeta
 import logging
 
-from baseplatform import BasePlatform
+from .baseplatform import BasePlatform
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
 import threading
 import logging
 import vlc
-from basehandler import BaseHandler, PlaybackAudioType
+from .basehandler import BaseHandler, PlaybackAudioType
 
 
 logger = logging.getLogger(__name__)
