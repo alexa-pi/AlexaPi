@@ -1,6 +1,7 @@
 import time
 import threading
 import logging
+import sys
 
 from .baseplatform import BasePlatform
 
@@ -64,7 +65,8 @@ class DesktopPlatformTriggerThread(threading.Thread):
 		while self.should_run:
 			key = ""
 			while key != 'a':
-				key = raw_input('Type "a" to trigger Alexa: ')
+				print('Type "a" to trigger Alexa: ')
+				key = sys.stdin.readline().strip()
 
 			self.platform.started = time.time()
 
