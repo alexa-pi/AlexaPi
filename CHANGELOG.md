@@ -4,7 +4,9 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
-Please update your config according to the [Configuration changes] section on the wiki.
+
+## [1.4] - 2017-03-01
+Please update your config according to the [Configuration changes] section on the wiki or better, do a new clean installation with a fresh config.
 
 ### Added
 - Startup, pre-interaction, post-interaction and shutdown commands. Can be used to adjust shairport-sync volume for example (see `config.template.yaml`)
@@ -31,13 +33,13 @@ Please update your config according to the [Configuration changes] section on th
 ### Removed
 - unused dependencies; if you haven't used it for anything else, you can safely disable it and uninstall:
     - memcached (as of this version)
-        - `systemctl stop memcached`
-        - `pip uninstall python-memcached`
+        - `sudo systemctl stop memcached`
+        - `sudo pip uninstall python-memcached`
         - (Debian) `sudo apt-get remove memcached`
         - (Arch Linux) `sudo pacman -R memcached`
-    - Wave: `pip uninstall Wave`
-    - wsgiref: `pip uninstall wsgiref`
-    - py-getch: `pip uninstall py-getch`
+    - Wave: `sudo pip uninstall Wave`
+    - wsgiref: `sudo pip uninstall wsgiref`
+    - py-getch: `sudo pip uninstall py-getch`
 
 ## [1.3.1] - 2017-01-01
 This is mainly a test of doing bugfix releases.
@@ -111,7 +113,8 @@ This is mainly a test of doing bugfix releases.
 @sammachin created the project in January 2016 and made significant changes that lead to this version.
 
 
-[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.3.1...HEAD
+[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.4...HEAD
+[1.4]: https://github.com/alexa-pi/AlexaPi/compare/v1.3...v1.4
 [1.3.1]: https://github.com/alexa-pi/AlexaPi/compare/v1.3...v1.3.1
 [1.3]: https://github.com/alexa-pi/AlexaPi/compare/v1.2...v1.3
 [1.2]: https://github.com/alexa-pi/AlexaPi/compare/v1.1...v1.2
