@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+- Support for snowboy - the awesome trigger word detector
+
 ## [1.6] - 2017-10-08
 
 ### Added

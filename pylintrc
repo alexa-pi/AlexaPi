@@ -158,7 +158,7 @@ notes=XXX
 [SIMILARITIES]
 
 # Minimum lines number of a similarity.
-min-similarity-lines=5
+min-similarity-lines=6
 
 # Ignore comments when computing similarities.
 ignore-comments=yes
