@@ -18,7 +18,7 @@ sudo: required
 # Some discussion: https://github.com/koalaman/shellcheck/issues/785
 before_install:
   - sudo apt-get update
-  - sudo apt-get install -y wget git swig libasound2-dev libpulse-dev vlc-nox shellcheck
+  - sudo apt-get install -y wget git swig portaudio19-dev libpulse-dev vlc-nox shellcheck
 
 install:
   - pip install -r src/requirements.txt

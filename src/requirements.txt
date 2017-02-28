@@ -1,7 +1,7 @@
 requests>=2.13.0
 CherryPy>=10.1.1
 git+https://github.com/oaubert/python-vlc.git#egg=python-vlc
-pyalsaaudio>=0.8.4
+pyaudio>=0.2.10
 webrtcvad>=2.0.10
 pyyaml
 pocketsphinx>=0.1.3

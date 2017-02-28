@@ -21,7 +21,7 @@ load-plugins=
 # A comma-separated list of package or module names from where C extensions may
 # be loaded. Extensions are loading into the active Python interpreter and may
 # run arbitrary code
-extension-pkg-whitelist=alsaaudio,pyA20,CHIP_IO
+extension-pkg-whitelist=pyA20,CHIP_IO
 
 [MESSAGES CONTROL]
 
@@ -158,7 +158,7 @@ notes=XXX
 [SIMILARITIES]
 
 # Minimum lines number of a similarity.
-min-similarity-lines=4
+min-similarity-lines=5
 
 # Ignore comments when computing similarities.
 ignore-comments=yes
