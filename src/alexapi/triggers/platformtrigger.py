@@ -12,12 +12,13 @@ logger = logging.getLogger(__name__)
 class PlatformTrigger(BaseTrigger):
 
 	type = triggers.TYPES.OTHER
+	name = 'platform'
 
 	_platform_continuous_callback = None
 
 	def __init__(self, config, trigger_callback):
 
-		super(PlatformTrigger, self).__init__(config, trigger_callback, 'platform')
+		super(PlatformTrigger, self).__init__(config, trigger_callback)
 
 		event_types = {
 			'oneshot-vad': triggers.EVENT_TYPES.ONESHOT_VAD,

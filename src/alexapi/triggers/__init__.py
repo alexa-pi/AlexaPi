@@ -38,6 +38,13 @@ def disable(type_filter=None):
 			trigger.disable()
 
 
+def cleanup(type_filter=None):
+	for name in triggers:
+		trigger = triggers[name]
+		if (not type_filter) or (trigger.type == type_filter):
+			trigger.cleanup()
+
+
 class TYPES(object):
 	OTHER = 0
 	VOICE = 1

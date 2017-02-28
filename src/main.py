@@ -543,6 +543,7 @@ def trigger_process(trigger):
 
 def cleanup(signal, frame):   # pylint: disable=redefined-outer-name,unused-argument
 	triggers.disable()
+	triggers.cleanup()
 	capture.cleanup()
 	pHandler.cleanup()
 	platform.cleanup()
@@ -561,14 +562,13 @@ if __name__ == "__main__":
 
 	try:
 		capture = alexapi.capture.Capture(config, tmp_path)
+		capture.setup(platform.indicate_recording)
+
+		triggers.init(config, trigger_callback, capture)
+		triggers.setup()
 	except ConfigurationException as exp:
 		logger.critical(exp)
 		sys.exit(1)
-
-	capture.setup(platform.indicate_recording)
-
-	triggers.init(config, trigger_callback, capture)
-	triggers.setup()
 
 	pHandler.setup()
 	platform.setup()
