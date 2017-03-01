@@ -17,7 +17,7 @@ set -e
 NAME="AlexaPi"
 PIDFILE="/run/$NAME/$NAME.pid"
 DAEMON="/usr/bin/python /opt/AlexaPi/src/main.py"
-DAEMON_OPTS=""
+DAEMON_OPTS="--daemon"
 RUN_USER="alexapi"
 RUN_GROUP="alexapi"
 
@@ -28,7 +28,7 @@ MONITOR_DAEMON="/opt/AlexaPi/src/scripts/monitorAlexa.sh"
 function alexa_run {
     mkdir -p /run/$NAME
     chown $RUN_USER:$RUN_GROUP /run/$NAME
-    start-stop-daemon --start --background --quiet --chuid $RUN_USER:$RUN_GROUP --chdir /run/$NAME --pidfile $PIDFILE --make-pidfile --exec $DAEMON -- $DAEMON_OPTS
+    start-stop-daemon --start --background --quiet --chuid $RUN_USER:$RUN_GROUP --chdir /run/$NAME --pidfile $PIDFILE --make-pidfile --exec "$DAEMON" -- $DAEMON_OPTS
 }
 
 exec > /var/log/$NAME.log 2>&1

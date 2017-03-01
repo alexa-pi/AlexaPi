@@ -1,11 +1,18 @@
 from __future__ import unicode_literals
 
-import ConfigParser as configparser
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 import logging
 import re
 import time
-import urlparse
+
+try:
+    from urllib.parse import urlparse
+except ImportError:
+    from urlparse import urlparse
 
 from collections import OrderedDict
 from contextlib import closing
@@ -13,15 +20,18 @@ from contextlib import closing
 import requests
 
 try:
-    import cStringIO as StringIO
+    import io as StringIO
 except ImportError:
-    import StringIO as StringIO
+    try:
+        import cStringIO as StringIO
+    except ImportError:
+        import StringIO as StringIO
+
 try:
     import xml.etree.cElementTree as elementtree
 except ImportError:
     import xml.etree.ElementTree as elementtree
 
-logging.basicConfig(filename='tunein.log', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -298,7 +308,7 @@ class TuneIn(object):
 
     def parse_stream_url(self, url):
         logger.debug('Extracting URIs from %s', url)
-        extension = urlparse.urlparse(url).path[-4:]
+        extension = urlparse(url).path[-4:]
         if extension in ['.mp3', '.wma']:
             logger.debug('Got %s', url)
             return [url]  # Catch these easy ones

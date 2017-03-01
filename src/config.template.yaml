@@ -2,10 +2,18 @@
 
 # See https://github.com/alexa-pi/AlexaPi/wiki/Audio-setup-&-debugging
 # to get a better idea of how to set things in here
+
+# Level of log output
+# default: INFO
+# set to DEBUG for verbose logging
+logging: INFO
+
 sound:
   # Name of your ALSA microphone/soundcard in arecord -L
-  # you can also try setting it to 'default'
-  input_device: "plughw:1"
+  input_device: "default"
+  # This is here if none of the listed devices works for you and you need to use a value like "plughw:1"
+  # This is an override that is normally not needed and is a last resort.
+  allow_unlisted_input_device: false
 
   playback_handler: "vlc"
 
@@ -26,6 +34,11 @@ sound:
   media_output_device:
   media_default_volume:
 
+  # Some devices clip off the beginning/end of audio files being played back. The
+  # value is the number of seconds of silence to pad the beginning and end of the audio. Only
+  # the sox handler supports this configuration option.
+  playback_padding: 0
+
 # Amazon Alexa settings
 alexa:
   Client_ID:
@@ -35,21 +48,16 @@ alexa:
   Security_Profile_ID:
   refresh_token:
 
-sphinx:
-  trigger_phrase: "alexa"
+# See https://github.com/alexa-pi/AlexaPi/wiki/Triggers for the description of these options
+triggers:
+  platform:
+    enabled: true
+    voice_confirm: false
 
-platform:
-  # Name of your platform, e.g. raspberrypi, orangepi, desktop
-  device: "dummy"
+    # one of: oneshot-vad, continuous, continuous-vad
+    event_type: "oneshot-vad"
 
-platforms:
-  # common config for all platforms (if they support the options)
-  # can be overriden in the the respective platform sections
-  common:
-    # whether you want to hear Alexa's "yes" after you press a button
-    # "true" or "false"
-    should_confirm_trigger: false
-
+    # only for "continuous" event_types
     long_press:
       # system command to run after pressing the button for _duration_ number of seconds
       # empty to disable
@@ -63,6 +71,45 @@ platforms:
       # you might wanna use full path to make sure AlexaPi finds it
       # you can use {resources_path} for the path to the AlexaPi "resources" directory
       audio_file: ""
+
+
+  pocketsphinx:
+    enabled: true
+    voice_confirm: true
+
+    phrase: "alexa"
+    threshold: 1e-10
+
+# Commands to run before and after an interaction begins. Leave empty to disable.
+event_commands:
+
+  # Example used to lower shairport-sync volume during interaction with alexa
+  #     startup: "amixer set shairportvolume 100%"
+  #     pre_interaction: "amixer set shairportvolume 10%-""
+  #     post_interaction: "amixer set shairportvolume 10%+""
+  # Note this assumes you have redirected shairport-syncs audio to a seperate softdevice
+  # with control "shairportvolume". Example asound.conf avalible in the scripts folder
+
+  # Command to run at the start of AlexaPi
+  startup: ""
+
+  # Command to run after a trigger is detected but before an interaction begins
+  pre_interaction: ""
+
+  # Command to run after the interaction has completed
+  post_interaction: ""
+
+  # Command to run during a clean shutdown of AlexaPi
+  shutdown: ""
+
+platform:
+  # Name of your platform, e.g. raspberrypi, orangepi, desktop
+  device: "dummy"
+
+platforms:
+  # common config for all platforms (if they support the options)
+  # can be overriden in the the respective platform sections
+  common:
 
   chip:
     # GPIO Pin with button connected
@@ -89,13 +136,9 @@ platforms:
     rec_light: 8
 
   desktop:
-    should_confirm_trigger: true
-
     min_seconds_to_record: 3
 
   dummy:
-    # whether to print messages when methods are called
-    verbose: false
 
   magicmirror:
     # Magic Mirror - github.com/MichMich/MagicMirror
@@ -110,3 +153,42 @@ platforms:
     mm_port: "8080"
     # How ofter the Hearbeat fires in seconds
     hb_timer: 5
+
+  hyperion:
+    # Hostname of the Hyperion node's JSON server
+    hyperion_json_host: "127.0.0.1"
+    # Port of the Hyperion node's JSON server
+    hyperion_json_port: 19444
+    # Visual status as static 'color' or 'effect'
+    # Overridden by 'hyperion_flash_state_xxx'
+    hyperion_mode: "effect"
+    # Running speed when visualizing as 'effect'
+    hyperion_effect_speed: 1
+    hyperion_priority: 1
+    color_playback: [80, 213, 35]
+    color_processing: [35,169,213]
+    color_recording: [168, 35, 213]
+    flash_duration: 500
+    flash_frequency: 8
+    # Use Strobe effect instead of default effect or static color
+    flash_state_playback: true
+    flash_state_processing: false
+    flash_state_recording: false
+    # Visualize playback state
+    indicate_playback: true
+    #Also print json request/response when in debug mode
+    verbose: false
+
+  serial:
+    port: "/dev/ttyACM0"
+    baudrate: 9600
+    messages:
+      trigger: ""
+      playback_start: "g"
+      playback_end: "x"
+      recording_start: ""
+      recording_end: ""
+      processing_start: ""
+      processing_end: ""
+      failure: ""
+      success: ""

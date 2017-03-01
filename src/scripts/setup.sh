@@ -1,7 +1,11 @@
 #!/bin/bash
 
-pushd `dirname $0`/../ > /dev/null
-ALEXASRC_DIRECTORY=`pwd -P`
+set -o nounset # Fail when variable is used, but not initialized
+set -o errexit # Fail on unhandled error exits
+set -o pipefail # Fail when part of piped execution fails
+
+pushd "$(dirname "$0")/../" > /dev/null
+ALEXASRC_DIRECTORY=$(pwd -P)
 popd > /dev/null
 
 SCRIPT_DIRECTORY=$ALEXASRC_DIRECTORY/scripts
@@ -26,7 +30,7 @@ if [ "$ALEXASRC_DIRECTORY" != "$ALEXASRC_DIRECTORY_CORRECT" ]; then
     echo "If you wish to be able to run AlexaPi on boot, please interrupt this script and download into /opt."
     echo ""
     echo "Note: If you're an advanced user, you can install the init script manually and edit it to reflect your install path, but we don't provide any guarantees."
-    read -p "Interrupt? (Y/n)? " interrupt_script
+    read -r -p "Interrupt? (Y/n)? " interrupt_script
 
     case ${interrupt_script} in
             [nN] )
@@ -40,45 +44,49 @@ if [ "$ALEXASRC_DIRECTORY" != "$ALEXASRC_DIRECTORY_CORRECT" ]; then
 
 fi
 
-cd ${SCRIPT_DIRECTORY}
+cd "${SCRIPT_DIRECTORY}"
 
 OS_default="debian"
 DEVICE_default="raspberrypi"
 
 echo "Which operating system are you using?"
-echo "debian        - Debian, Raspbian, Armbian, Ubuntu or other Debian-based"
-echo "archlinux     - Arch Linux or Arch Linux-based"
-read -p "Your OS [${OS_default}]: " OS
+printf "%15s - %s\n" "debian" "Debian, Raspbian, Armbian, Ubuntu or other Debian-based"
+printf "%15s - %s\n" "archlinux" "Arch Linux or Arch Linux-based"
+read -r -p "Your OS [${OS_default}]: " OS
 
 if [ "${OS}" == "" ]; then
     OS=${OS_default}
-elif [ ! -f "./inc/${OS}.sh" ]; then
+elif [ ! -f "./inc/os/${OS}.sh" ]; then
     echo "Incorrect value. Exiting."
     exit
 fi
 
 echo "Which device are you using?"
-echo "raspberrypi   - all Raspberry Pi variants"
-echo "orangepi      - Orange Pi or another H3 based board"
-echo "chip          - C.H.I.P."
-echo "magicmirror   - Integrating with Magic Mirror project (MMM-AlexaPi)"
-echo "other         - other SBCs, desktops, or anything else"
-read -p "Your device [${DEVICE_default}]: " DEVICE
+cd inc/device
+for deviceFile in *.sh; do
+    deviceName="${deviceFile/.sh/}"
+    deviceDescription=$(grep -P -o -e "(?<=DESCRIPTION=\")(.*)(?=\")" "${deviceFile}")
+
+    printf "%15s - %s\n" "${deviceName}" "${deviceDescription}"
+done
+cd "${SCRIPT_DIRECTORY}"
+
+read -r -p "Your device [${DEVICE_default}]: " DEVICE
 
 if [ "${DEVICE}" == "" ]; then
     DEVICE=${DEVICE_default}
-elif [ "${DEVICE}" != "other" ] && [ ! -f "./inc/${DEVICE}.sh" ]; then
+elif [ ! -f "./inc/device/${DEVICE}.sh" ]; then
     echo "Incorrect value. Exiting."
     exit
 fi
 
 source ./inc/common.sh
 
-source ./inc/${OS}.sh
+# shellcheck disable=SC1090
+source ./inc/os/${OS}.sh
 
-if [ "${DEVICE}" != "other" ]; then
-    source ./inc/${DEVICE}.sh
-fi
+# shellcheck disable=SC1090
+source ./inc/device/${DEVICE}.sh
 
 if [ "$ALEXASRC_DIRECTORY" == "$ALEXASRC_DIRECTORY_CORRECT" ]; then
 
@@ -87,7 +95,7 @@ if [ "$ALEXASRC_DIRECTORY" == "$ALEXASRC_DIRECTORY_CORRECT" ]; then
 	echo "0 - NO"
 	echo "1 - yes, use systemd (default, RECOMMENDED and awesome)"
 	echo "2 - yes, use a classic init script (for a very old PC or an embedded system)"
-	read -p "Which option do you prefer? [1]: " init_type
+	read -r -p "Which option do you prefer? [1]: " init_type
 
     if [ "${init_type// /}" != "0" ]; then
 
@@ -95,17 +103,12 @@ if [ "$ALEXASRC_DIRECTORY" == "$ALEXASRC_DIRECTORY_CORRECT" ]; then
             init_type="1"
         fi
 
-        read -p "Would you like to have AlexaPi restart when it crashes? (y/N)? " monitorAlexa
-        if [ "$monitorAlexa" == "y" ] || [ "$monitorAlexa" == "Y" ]; then
-            monitorAlexa=true
-        else
-            monitorAlexa=false
-        fi
+        monitorAlexa=false
 
         create_user
         gpio_permissions
 
-        cd ${SCRIPT_DIRECTORY}
+        cd "${SCRIPT_DIRECTORY}"
 
         case ${init_type} in
             2 ) # classic
@@ -121,23 +124,20 @@ if [ "$ALEXASRC_DIRECTORY" == "$ALEXASRC_DIRECTORY_CORRECT" ]; then
 
 fi
 
-read -p "Would you like to also install Airplay support (Y/n)? " shairport
+read -r -p "Would you like to also install Airplay support (Y/n)? " shairport
 
 install_os
 
-cd $ALEXASRC_DIRECTORY
+cd "${ALEXASRC_DIRECTORY}"
 
-NEWPIP=`run_pip --version | grep "pip 1.5"`
-NEWPIP=$?
-if [ ${NEWPIP} -eq 1 ]; then
-    run_pip install --no-cache-dir -r ./requirements.txt
-else
+# This is here because of https://github.com/pypa/pip/issues/2984
+if run_pip --version | grep "pip 1.5"; then
     run_pip install -r ./requirements.txt
+else
+    run_pip install --no-cache-dir -r ./requirements.txt
 fi
 
-if [ "${DEVICE}" != "other" ]; then
-    install_device
-fi
+install_device
 
 case $shairport in
         [nN] ) ;;
@@ -148,7 +148,7 @@ case $shairport in
         ;;
 esac
 
-cd ${ALEXASRC_DIRECTORY}
+cd "${ALEXASRC_DIRECTORY}"
 echo ""
 
 if [ "${ALEXASRC_DIRECTORY}" == "${ALEXASRC_DIRECTORY_CORRECT}" ]; then
@@ -169,7 +169,7 @@ if [ -f $CONFIG_FILE ]; then
     echo "[0] Keep and use current configuration file."
     echo "[1] Edit existing configuration file."
     echo "[2] Delete the configuration file and start with a fresh one."
-	read -p "Which option do you prefer? [hit Enter for 0]: " config_action
+	read -r -p "Which option do you prefer? [hit Enter for 0]: " config_action
 fi
 
 case ${config_action} in
@@ -188,9 +188,7 @@ case ${config_action} in
 
 esac
 
-if [ "${DEVICE}" != "other" ]; then
-    install_device_config
-fi
+install_device_config
 
 declare -A config_defaults
 config_defaults[Device_Type_ID]=$(config_get Device_Type_ID)
@@ -199,20 +197,28 @@ config_defaults[Security_Profile_ID]=$(config_get Security_Profile_ID)
 config_defaults[Client_ID]=$(config_get Client_ID)
 config_defaults[Client_Secret]=$(config_get Client_Secret)
 
-read -p "Enter your Device Type ID [${config_defaults[Device_Type_ID]}]: " Device_Type_ID
-config_set 'Device_Type_ID' ${Device_Type_ID}
+read -r -p "Enter your Device Type ID [${config_defaults[Device_Type_ID]}]: " Device_Type_ID
+config_set 'Device_Type_ID' "${Device_Type_ID}"
 
-read -p "Enter your Security Profile Description [${config_defaults[Security_Profile_Description]}]: " Security_Profile_Description
-config_set 'Security_Profile_Description' ${Security_Profile_Description}
+read -r -p "Enter your Security Profile Description [${config_defaults[Security_Profile_Description]}]: " Security_Profile_Description
+config_set 'Security_Profile_Description' "${Security_Profile_Description}"
 
-read -p "Enter your Security Profile ID [${config_defaults[Security_Profile_ID]}]: " Security_Profile_ID
-config_set 'Security_Profile_ID' ${Security_Profile_ID}
+read -r -p "Enter your Security Profile ID [${config_defaults[Security_Profile_ID]}]: " Security_Profile_ID
+config_set 'Security_Profile_ID' "${Security_Profile_ID}"
 
-read -p "Enter your Client ID [${config_defaults[Client_ID]}]: " Client_ID
-config_set 'Client_ID' ${Client_ID}
+read -r -p "Enter your Client ID [${config_defaults[Client_ID]}]: " Client_ID
+config_set 'Client_ID' "${Client_ID}"
 
-read -p "Enter your Client Secret [${config_defaults[Client_Secret]}]: " Client_Secret
-config_set 'Client_Secret' ${Client_Secret}
+read -r -p "Enter your Client Secret [${config_defaults[Client_Secret]}]: " Client_Secret
+config_set 'Client_Secret' "${Client_Secret}"
 
 
 run_python ./auth_web.py
+
+echo ""
+echo "######################################################################################################"
+echo "IMPORTANT NOTICE:"
+echo "If you use a desktop OS, you HAVE TO set up your system audio so services like AlexaPi can use it too."
+echo "See https://github.com/alexa-pi/AlexaPi/wiki/Audio-setup-&-debugging#pulseaudio"
+echo "######################################################################################################"
+echo ""

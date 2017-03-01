@@ -1,6 +1,6 @@
 import RPi.GPIO as GPIO
 
-from rpilike import RPiLikePlatform
+from .rpilikeplatform import RPiLikePlatform
 
 
 class RaspberrypiPlatform(RPiLikePlatform):

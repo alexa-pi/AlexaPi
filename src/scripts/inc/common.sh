@@ -5,11 +5,11 @@ RUN_USER="alexapi"
 HOME_DIR="/var/lib/AlexaPi"
 
 function run_python {
-    $(which python2) $@
+    python2 "$@"
 }
 
 function run_pip {
-    $(which pip2) $@
+    pip2 "$@"
 }
 
 function init_classic {
@@ -45,15 +45,11 @@ function init_systemd {
 function create_user {
 
     echo -n "Creating a user to run AlexaPi under ... "
-    UID_TEST=`id -u ${RUN_USER} >/dev/null 2>&1`
-    UID_TEST="$?"
 
-    if [ ${UID_TEST} -eq 0 ]; then
+    if id -u ${RUN_USER} >/dev/null 2>&1; then
         echo "user already exists. That's cool - using that."
     else
-        useradd --system --user-group ${RUN_USER} 2>/dev/null
-
-        if [ "$?" -eq "0" ]; then
+        if useradd --system --user-group ${RUN_USER} 2>/dev/null; then
             echo "done."
         else
             echo "unknown error. useradd returned code $?."
@@ -77,7 +73,8 @@ function gpio_permissions {
     local rulesFile="/etc/udev/rules.d/99-gpio.rules"
 
     if [ ! -f ${rulesFile} ]; then
-        cat >${rulesFile} <<EOL
+        # shellcheck disable=SC2154
+        cat >${rulesFile} <<'EOL'
 SUBSYSTEM=="gpio*", PROGRAM="/bin/sh -c '\
 	chown -R root:gpio /sys/class/gpio && chmod -R 770 /sys/class/gpio;\
 	chown -R root:gpio /sys/devices/virtual/gpio && chmod -R 770 /sys/devices/virtual/gpio;\
@@ -108,7 +105,7 @@ function install_shairport-sync_from_source {
 
 # global variable $CONFIG_FILE
 function config_get {
-    grep -o -P "(?<=${1}:).*" ${CONFIG_FILE} | sed 's/^ *//;s/ *$//;s/"//g'
+    grep -o -P "(?<=${1}:).*" "${CONFIG_FILE}" | sed 's/^ *//;s/ *$//;s/"//g'
 }
 
 # $1 field name
@@ -120,9 +117,10 @@ function config_set {
     local value=${2}
 
     if [ "${value}" == "" ]; then
+        # shellcheck disable=SC2154
         value="${config_defaults[${name}]}"
     fi
-    sed -i -e 's/ '"${name}"'.*/ '"${name}"': "'"${value}"'"/g' ${CONFIG_FILE}
+    sed -i -e 's/ '"${name}"'.*/ '"${name}"': "'"${value}"'"/g' "${CONFIG_FILE}"
 }
 
 function handle_root_platform {

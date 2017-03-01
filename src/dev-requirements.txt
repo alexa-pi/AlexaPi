@@ -1,3 +1,5 @@
+pylint
 fakeRPiGPIO
 -e git+https://github.com/xtacocorex/CHIP_IO.git#egg=CHIP_IO
-pylint
+websocket-client
+pyserial

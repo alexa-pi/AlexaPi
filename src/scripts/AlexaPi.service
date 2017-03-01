@@ -11,7 +11,7 @@ After=network.target network-online.target sound.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python /opt/AlexaPi/src/main.py
+ExecStart=/usr/bin/python /opt/AlexaPi/src/main.py --daemon
 
 User=alexapi
 Group=alexapi

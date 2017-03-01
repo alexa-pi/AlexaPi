@@ -1,18 +1,31 @@
 language: python
+
+cache: pip
+
 python:
   - "2.7"
-#  - "3.4"
-#  - "3.5"
+  - "3.4"
+  - "3.5"
+# pylint doesn't work on 3.6 yet
+#  - "3.6"
 
+dist: trusty
+# On the container-based infrastructure, trusty-backports isn't available, hence this silly thing
+sudo: required
+
+# It installs old shellcheck from trusty-backports
+# Installing from Debian Sid or Ubuntu Zesty doesn't work
+# Some discussion: https://github.com/koalaman/shellcheck/issues/785
 before_install:
-  - sudo apt-get -qq update
-  - sudo apt-get install -y wget git swig libasound2-dev python-alsaaudio vlc-nox libpulse-dev
+  - sudo apt-get update
+  - sudo apt-get install -y wget git swig libasound2-dev libpulse-dev vlc-nox shellcheck
 
 install:
   - pip install -r src/requirements.txt
   - pip install -r src/dev-requirements.txt
   - yes | pip install git+https://github.com/duxingkei33/orangepi_PC_gpio_pyH3.git -v
-  - cp src/config.template.yaml src/config.yaml
 
 script:
   - pylint --rcfile=pylintrc --ignore=tunein.py src/auth_web.py src/main.py src/alexapi
+  - python -c "import yaml; yaml.load(open('src/config.template.yaml'))"
+  - cd src/scripts && shellcheck -e 2164 ./inc/*.sh ./inc/os/*.sh ./inc/device/*.sh ./*.sh
