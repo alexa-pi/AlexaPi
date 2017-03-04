@@ -7,6 +7,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ### Changed
 - On Debian-based systems, the `python-pip` package gets uninstalled and `pip` is installed via `easy_install` instead to get the latest version.
+- Recorded audio is now streamed to AVS instead of recording the whole thing and then sending it at once.
+    - Brings huge speed improvement (response latency).
+    - This means that when your recording LED (or whatever your device equivalent) is on, data gets sent to Amazon already.
+    - Used code from @respeaker (thank you!).
 
 ### Fixed
 - Updated old versions of requirements in `requirements.txt`. Also fixes `ImportError: No module named cheroot.server`.

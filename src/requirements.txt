@@ -6,3 +6,4 @@ webrtcvad>=2.0.10
 pyyaml
 pocketsphinx>=0.1.3
 coloredlogs
+future>=0.16.0
