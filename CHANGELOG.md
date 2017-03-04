@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Changed
+- On Debian-based systems, the `python-pip` package gets uninstalled and `pip` is installed via `easy_install` instead to get the latest version.
+
 ### Fixed
 - Updated old versions of requirements in `requirements.txt`. Also fixes `ImportError: No module named cheroot.server`.
 

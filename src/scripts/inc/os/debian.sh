@@ -2,7 +2,9 @@
 
 function install_os {
     apt-get update
-    apt-get install curl git build-essential python-dev python-setuptools python-pip swig libasound2-dev libpulse-dev vlc-nox sox libsox-fmt-mp3 -y
+    apt-get install curl git build-essential python-dev python-setuptools swig libasound2-dev libpulse-dev vlc-nox sox libsox-fmt-mp3 -y
+    apt-get remove python-pip
+    easy_install pip
 }
 
 function install_shairport-sync {
