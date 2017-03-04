@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+- Updated old versions of requirements in `requirements.txt`. Also fixes `ImportError: No module named cheroot.server`.
+
 ## [1.4] - 2017-03-01
 Please update your config according to the [Configuration changes] section on the wiki or better, do a new clean installation with a fresh config.
 
