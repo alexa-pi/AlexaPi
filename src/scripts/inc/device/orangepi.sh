@@ -8,7 +8,5 @@ function install_device {
 }
 
 function install_device_config {
-    config_set 'input_device' 'default'
-
     handle_root_platform 'orangepi'
 }
