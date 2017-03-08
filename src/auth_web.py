@@ -4,6 +4,9 @@ from __future__ import print_function
 import os
 import json
 import socket
+import uuid
+import hashlib
+
 import yaml
 import cherrypy
 import requests
@@ -26,7 +29,7 @@ class Start(object):
 			"alexa:all": {
 				"productID": config['alexa']['Device_Type_ID'],
 				"productInstanceAttributes": {
-					"deviceSerialNumber": "001"
+					"deviceSerialNumber": hashlib.sha256(str(uuid.getnode()).encode()).hexdigest()
 				}
 			}
 		})

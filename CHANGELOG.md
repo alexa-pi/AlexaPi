@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
     - Brings huge speed improvement (response latency).
     - This means that when your recording LED (or whatever your device equivalent) is on, data gets sent to Amazon already.
     - Used code from @respeaker (thank you!).
+- Changed the device ID in auth_web to use a unique ID for the HW from UUID.getnode() to allow multiple devices on one account, this ID is a hashed version of one of the devices MAC addresses.
 
 ### Fixed
 - Updated old versions of requirements in `requirements.txt`. Also fixes `ImportError: No module named cheroot.server`.
