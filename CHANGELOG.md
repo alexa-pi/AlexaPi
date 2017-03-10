@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.5] - 2017-03-10
+Please run the installation script again to install / upgrade all the dependencies. 
+There are no config changes this time. 
+Run the `auth_web.py` again after the install (when keeping a config) for your device to appear separately in the Alexa app. 
+
 ### Changed
 - On Debian-based systems, the `python-pip` package gets uninstalled and `pip` is installed via `easy_install` instead to get the latest version.
 - Recorded audio is now streamed to AVS instead of recording the whole thing and then sending it at once.
@@ -125,7 +130,8 @@ This is mainly a test of doing bugfix releases.
 @sammachin created the project in January 2016 and made significant changes that lead to this version.
 
 
-[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.4...HEAD
+[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.5...HEAD
+[1.5]: https://github.com/alexa-pi/AlexaPi/compare/v1.4...v1.5
 [1.4]: https://github.com/alexa-pi/AlexaPi/compare/v1.3...v1.4
 [1.3.1]: https://github.com/alexa-pi/AlexaPi/compare/v1.3...v1.3.1
 [1.3]: https://github.com/alexa-pi/AlexaPi/compare/v1.2...v1.3
