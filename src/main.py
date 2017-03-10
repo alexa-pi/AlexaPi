@@ -13,6 +13,7 @@ import json
 import optparse
 import email
 import subprocess
+from future.builtins import bytes
 
 import yaml
 import requests
@@ -277,27 +278,33 @@ class Token(object):
 			logger.critical("AVS token: Failed to obtain a token: " + str(exp))
 
 
-def alexa_speech_recognizer():
-	# https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/rest/speechrecognizer-requests
-	logger.debug("Sending Speech Request...")
+# from https://github.com/respeaker/Alexa/blob/master/alexa.py
+def alexa_speech_recognizer_generate_data(audio, boundary):
+	"""
+	Generate a iterator for chunked transfer-encoding request of Alexa Voice Service
+	Args:
+		audio: raw 16 bit LSB audio data
+		boundary: boundary of multipart content
+	Returns:
+	"""
+	logger.debug('Start sending speech to Alexa Voice Service')
+	chunk = '--%s\r\n' % boundary
+	chunk += (
+		'Content-Disposition: form-data; name="request"\r\n'
+		'Content-Type: application/json; charset=UTF-8\r\n\r\n'
+	)
 
-	platform.indicate_processing()
-
-	url = 'https://access-alexa-na.amazon.com/v1/avs/speechrecognizer/recognize'
-	headers = {'Authorization': 'Bearer %s' % token}
 	data = {
 		"messageHeader": {
-			"deviceContext": [
-				{
-					"name": "playbackState",
-					"namespace": "AudioPlayer",
-					"payload": {
-						"streamId": "",
-						"offsetInMilliseconds": "0",
-						"playerActivity": "IDLE"
-					}
+			"deviceContext": [{
+				"name": "playbackState",
+				"namespace": "AudioPlayer",
+				"payload": {
+					"streamId": "",
+					"offsetInMilliseconds": "0",
+					"playerActivity": "IDLE"
 				}
-			]
+			}]
 		},
 		"messageBody": {
 			"profile": "alexa-close-talk",
@@ -306,12 +313,38 @@ def alexa_speech_recognizer():
 		}
 	}
 
-	with open(tmp_path + 'recording.wav', 'rb') as inf:
-		files = [
-			('file', ('request', json.dumps(data), 'application/json; charset=UTF-8')),
-			('file', ('audio', inf, 'audio/L16; rate=16000; channels=1'))
-		]
-		resp = requests.post(url, headers=headers, files=files)
+	yield bytes(chunk + json.dumps(data) + '\r\n', 'utf8')
+
+	chunk = '--%s\r\n' % boundary
+	chunk += (
+		'Content-Disposition: form-data; name="audio"\r\n'
+		'Content-Type: audio/L16; rate=16000; channels=1\r\n\r\n'
+	)
+
+	yield bytes(chunk, 'utf8')
+
+	for audio_chunk in audio:
+		yield audio_chunk
+
+	yield bytes('--%s--\r\n' % boundary, 'utf8')
+	logger.debug('Finished sending speech to Alexa Voice Service')
+
+	platform.indicate_processing()
+
+
+def alexa_speech_recognizer(audio_stream):
+	# https://developer.amazon.com/public/solutions/alexa/alexa-voice-service/rest/speechrecognizer-requests
+
+	url = 'https://access-alexa-na.amazon.com/v1/avs/speechrecognizer/recognize'
+	boundary = 'this-is-a-boundary'
+	headers = {
+		'Authorization': 'Bearer %s' % token,
+		'Content-Type': 'multipart/form-data; boundary=%s' % boundary,
+		'Transfer-Encoding': 'chunked',
+	}
+
+	data = alexa_speech_recognizer_generate_data(audio_stream, boundary)
+	resp = requests.post(url, headers=headers, data=data)
 
 	platform.indicate_processing(False)
 
@@ -396,7 +429,7 @@ def process_response(response):
 		try:
 			data = bytes("Content-Type: ", 'utf-8') + bytes(response.headers['content-type'], 'utf-8') + bytes('\r\n\r\n', 'utf-8') + response.content
 			msg = email.message_from_bytes(data) # pylint: disable=no-member
-		except TypeError:
+		except AttributeError:
 			data = "Content-Type: " + response.headers['content-type'] + '\r\n\r\n' + response.content
 			msg = email.message_from_string(data)
 
@@ -427,10 +460,10 @@ def process_response(response):
 
 						player.play_speech(resources_path + 'beep.wav')
 						timeout = directive['payload']['timeoutIntervalInMillis'] / 116
-						capture.silence_listener(timeout)
+						audio_stream = capture.silence_listener(timeout)
 
 						# now process the response
-						alexa_speech_recognizer()
+						alexa_speech_recognizer(audio_stream)
 
 				elif directive['namespace'] == 'AudioPlayer':
 					if directive['name'] == 'play':
@@ -481,14 +514,9 @@ def trigger_callback(trigger):
 
 
 def trigger_process(trigger):
-	if event_commands['pre_interaction']:
-		subprocess.Popen(event_commands['pre_interaction'], shell=True, stdout=subprocess.PIPE)
 
 	if player.is_playing():
 		player.stop()
-
-	if trigger.voice_confirm:
-		player.play_speech(resources_path + 'alexayes.mp3')
 
 	# clean up the temp directory
 	if not debug:
@@ -500,12 +528,18 @@ def trigger_process(trigger):
 			except Exception as exp: # pylint: disable=broad-except
 				logger.warning(exp)
 
+	if event_commands['pre_interaction']:
+		subprocess.Popen(event_commands['pre_interaction'], shell=True, stdout=subprocess.PIPE)
+
 	force_record = None
 	if trigger.event_type in triggers.types_continuous:
 		force_record = (trigger.continuous_callback, trigger.event_type in triggers.types_vad)
 
-	capture.silence_listener(force_record=force_record)
-	alexa_speech_recognizer()
+	if trigger.voice_confirm:
+		player.play_speech(resources_path + 'alexayes.mp3')
+
+	audio_stream = capture.silence_listener(force_record=force_record)
+	alexa_speech_recognizer(audio_stream)
 
 	triggers.enable()
 

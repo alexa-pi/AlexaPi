@@ -5,6 +5,23 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.5] - 2017-03-10
+Please run the installation script again to install / upgrade all the dependencies. 
+There are no config changes this time. 
+Run the `auth_web.py` again after the install (when keeping a config) for your device to appear separately in the Alexa app. 
+
+### Changed
+- On Debian-based systems, the `python-pip` package gets uninstalled and `pip` is installed via `easy_install` instead to get the latest version.
+- Recorded audio is now streamed to AVS instead of recording the whole thing and then sending it at once.
+    - Brings huge speed improvement (response latency).
+    - This means that when your recording LED (or whatever your device equivalent) is on, data gets sent to Amazon already.
+    - Used code from @respeaker (thank you!).
+- Changed the device ID in auth_web to use a unique ID for the HW from UUID.getnode() to allow multiple devices on one account, this ID is a hashed version of one of the devices MAC addresses.
+- Changed hello.mp3 to 24Khz Mono to match the other files
+
+### Fixed
+- Updated old versions of requirements in `requirements.txt`. Also fixes `ImportError: No module named cheroot.server`.
+
 ## [1.4] - 2017-03-01
 Please update your config according to the [Configuration changes] section on the wiki or better, do a new clean installation with a fresh config.
 
@@ -113,7 +130,8 @@ This is mainly a test of doing bugfix releases.
 @sammachin created the project in January 2016 and made significant changes that lead to this version.
 
 
-[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.4...HEAD
+[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.5...HEAD
+[1.5]: https://github.com/alexa-pi/AlexaPi/compare/v1.4...v1.5
 [1.4]: https://github.com/alexa-pi/AlexaPi/compare/v1.3...v1.4
 [1.3.1]: https://github.com/alexa-pi/AlexaPi/compare/v1.3...v1.3.1
 [1.3]: https://github.com/alexa-pi/AlexaPi/compare/v1.2...v1.3
