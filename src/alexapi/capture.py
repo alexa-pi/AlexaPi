@@ -2,6 +2,7 @@ import logging
 import time
 import threading
 import os
+import queue
 
 import webrtcvad
 
@@ -57,6 +58,9 @@ class Capture(object):
 	_handle_chunk_size = None
 
 	_device_info = None
+	_stream = None
+	_callback_data = None
+	_queue = None
 	_vad = None
 	_config = None
 	_tmp_path = None
@@ -69,6 +73,7 @@ class Capture(object):
 		self._tmp_path = tmp_path
 
 		self._pa = pyaudio.PyAudio()
+		self._queue = queue.Queue()
 		self._device_info = DeviceInfo()
 
 		self._recording_lock_inverted = threading.Event()
@@ -116,13 +121,77 @@ class Capture(object):
 	def handle_release(self):
 		self._handle.close()
 
+	def _callback(self, in_data, frame_count, time_info, status):  # pylint: disable=unused-argument
+
+		debug = logging.getLogger('alexapi').getEffectiveLevel() == logging.DEBUG
+
+		if not in_data:
+			self._queue.put(False)
+			return None, pyaudio.paAbort
+
+		do_VAD = True
+		if self._callback_data['force_record'] and not self._callback_data['force_record'][1]:
+			do_VAD = False
+
+		# do not count first 10 frames when doing VAD
+		if do_VAD and (self._callback_data['frames'] < self._callback_data['throwaway_frames']):
+			self._callback_data['frames'] += 1
+
+		# now do VAD
+		elif (self._callback_data['force_record'] and self._callback_data['force_record'][0]()) \
+				or (do_VAD and (self._callback_data['thresholdSilenceMet'] is False)
+					and ((time.time() - self._callback_data['start']) < self.MAX_RECORDING_LENGTH)):
+
+			if do_VAD:
+
+				if int(len(in_data) / 2) == self.VAD_PERIOD:
+					isSpeech = self._vad.is_speech(in_data, self.VAD_SAMPLERATE)
+
+					if not isSpeech:
+						self._callback_data['silenceRun'] += 1
+					else:
+						self._callback_data['silenceRun'] = 0
+						self._callback_data['numSilenceRuns'] += 1
+
+				# only count silence runs after the first one
+				# (allow user to speak for total of max recording length if they haven't said anything yet)
+				if (self._callback_data['numSilenceRuns'] != 0) \
+						and ((self._callback_data['silenceRun'] * self.VAD_FRAME_MS) > self.VAD_SILENCE_TIMEOUT):
+					self._callback_data['thresholdSilenceMet'] = True
+
+		else:
+			self._queue.put(False)
+			return None, pyaudio.paComplete
+
+		self._queue.put(in_data)
+		if debug:
+			self._callback_data['audio'] += in_data
+
+		return None, pyaudio.paContinue
+
 	def silence_listener(self, throwaway_frames=None, force_record=None):
+
+		logger.debug("Recording: Setting up")
 
 		self._recording_lock_inverted.clear()
 
-		throwaway_frames = throwaway_frames or self.VAD_THROWAWAY_FRAMES
+		debug = logging.getLogger('alexapi').getEffectiveLevel() == logging.DEBUG
 
-		logger.debug("Setting up recording")
+		if self._state_callback:
+			self._state_callback()
+
+		self._queue.queue.clear()
+
+		self._callback_data = {
+			'start': time.time(),
+			'thresholdSilenceMet': False,  # Buffer as long as we haven't heard enough silence or the total size is within max size
+			'frames': 0,
+			'throwaway_frames': throwaway_frames or self.VAD_THROWAWAY_FRAMES,
+			'numSilenceRuns': 0,
+			'silenceRun': 0,
+			'force_record': force_record,
+			'audio': b'' if debug else False,
+		}
 
 		stream = self._pa.open(
 			input=True,
@@ -130,78 +199,27 @@ class Capture(object):
 			format=pyaudio.paInt16,
 			channels=1,
 			rate=self.VAD_SAMPLERATE,
-			frames_per_buffer=self.VAD_PERIOD
+			frames_per_buffer=self.VAD_PERIOD,
+			stream_callback=self._callback,
+			start=False
 		)
 
-		debug = logging.getLogger('alexapi').getEffectiveLevel() == logging.DEBUG
-
-		logger.debug("Start recording")
-
-		if self._state_callback:
-			self._state_callback()
+		logger.debug("Recording: Start")
+		stream.start_stream()
 
 		def _listen():
-			start = time.time()
-
-			do_VAD = True
-			if force_record and not force_record[1]:
-				do_VAD = False
-
-			# Buffer as long as we haven't heard enough silence or the total size is within max size
-			thresholdSilenceMet = False
-			frames = 0
-			numSilenceRuns = 0
-			silenceRun = 0
-
-			if debug:
-				audio = b''
-
-			if do_VAD:
-				# do not count first 10 frames when doing VAD
-				while frames < throwaway_frames:
-
-					if self._interrupt:
+			while True:
+				try:
+					data = self._queue.get(block=True, timeout=2)
+					if not data or self._interrupt:
 						break
 
-					data = stream.read(self.VAD_PERIOD, exception_on_overflow=self._pa_exception_on_overflow)
-					frames += 1
-					if data:
-						yield data
-
-						if debug:
-							audio += data
-
-			# now do VAD
-			while (force_record and force_record[0]()) \
-					or (do_VAD and (thresholdSilenceMet is False) and ((time.time() - start) < self.MAX_RECORDING_LENGTH)):
-
-				if self._interrupt:
+					yield data
+				except queue.Empty:
 					break
 
-				data = stream.read(self.VAD_PERIOD, exception_on_overflow=self._pa_exception_on_overflow)
-				if data:
-					yield data
-
-					if debug:
-						audio += data
-
-					if do_VAD and (int(len(data)/2) == self.VAD_PERIOD):
-						isSpeech = self._vad.is_speech(data, self.VAD_SAMPLERATE)
-
-						if not isSpeech:
-							silenceRun += 1
-						else:
-							silenceRun = 0
-							numSilenceRuns += 1
-
-				if do_VAD:
-					# only count silence runs after the first one
-					# (allow user to speak for total of max recording length if they haven't said anything yet)
-					if (numSilenceRuns != 0) and ((silenceRun * self.VAD_FRAME_MS) > self.VAD_SILENCE_TIMEOUT):
-						thresholdSilenceMet = True
-
-			logger.debug("End recording")
-
+			stream.stop_stream()
+			logger.debug("Recording: End")
 			stream.close()
 
 			if self._state_callback:
@@ -209,7 +227,7 @@ class Capture(object):
 
 			if debug:
 				with open(self._tmp_path + 'recording.wav', 'wb') as rf:
-					rf.write(audio)
+					rf.write(self._callback_data['audio'])
 
 			self._recording_lock_inverted.set()
 
