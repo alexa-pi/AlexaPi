@@ -506,6 +506,8 @@ trigger_thread = None
 def trigger_callback(trigger):
 	global trigger_thread
 
+	logger.info("Triggered: %s", trigger.name)
+
 	triggers.disable()
 
 	trigger_thread = threading.Thread(target=trigger_process, args=(trigger,))
