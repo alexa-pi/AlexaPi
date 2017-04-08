@@ -63,10 +63,15 @@ class Start(object):
 
 		alexapi.config.set_variable(['alexa', 'refresh_token'], resp['refresh_token'])
 
-		return (
-			"<h2>Success!</h2><h3> Refresh token has been added to your "
-			"config file, you may now reboot the Pi </h3><br>{}"
-		).format(resp['refresh_token'])
+		return "<h2>Success!</h2>" \
+				"<p>The refresh token has been added to your config file.</p>" \
+				"<p>Now:</p>" \
+				"<ul>" \
+				"<li>close your this browser window,</li>" \
+				"<li>exit the setup script as indicated,</li>" \
+				"<li>and follow the Post-installation steps.</li>" \
+				"</ul>"
+
 
 	index.exposed = True
 	code.exposed = True
