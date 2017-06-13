@@ -1,6 +1,7 @@
 import os
 import threading
 import logging
+import platform
 
 from pocketsphinx import get_model_path
 from pocketsphinx.pocketsphinx import Decoder
@@ -43,7 +44,12 @@ class PocketsphinxTrigger(BaseTrigger):
 
 		# Hide the VERY verbose logging information when not in debug
 		if logging.getLogger('alexapi').getEffectiveLevel() != logging.DEBUG:
-			ps_config.set_string('-logfn', '/dev/null')
+
+			null_path = '/dev/null'
+			if platform.system() == 'Windows':
+				null_path = 'nul'
+
+			ps_config.set_string('-logfn', null_path)
 
 		# Process audio chunk by chunk. On keyword detected perform action and restart search
 		self._decoder = Decoder(ps_config)
