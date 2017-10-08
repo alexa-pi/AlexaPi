@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.6] - 2017-10-08
+
 ### Added
 - Windows support
 
@@ -145,7 +147,8 @@ This is mainly a test of doing bugfix releases.
 @sammachin created the project in January 2016 and made significant changes that lead to this version.
 
 
-[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.5.1...HEAD
+[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.6...HEAD
+[1.6]: https://github.com/alexa-pi/AlexaPi/compare/v1.5.1...v1.6
 [1.5.1]: https://github.com/alexa-pi/AlexaPi/compare/v1.5...v1.5.1
 [1.5]: https://github.com/alexa-pi/AlexaPi/compare/v1.4...v1.5
 [1.4]: https://github.com/alexa-pi/AlexaPi/compare/v1.3...v1.4
