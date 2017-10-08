@@ -1,6 +1,6 @@
 # AlexaPi (the new & awesome version) [![Gitter chat](https://badges.gitter.im/alexa-pi/Lobby.png)](https://gitter.im/alexa-pi/Lobby)
 
-This is a client for Amazon's Alexa service. It is intended and tested to run on a wide range of platforms, such as Raspberry Pi, Orange Pi, CHIP and ordinary Linux desktops.
+This is a client for Amazon's Alexa service. It is intended and tested to run on a wide range of platforms, such as Raspberry Pi, Orange Pi, CHIP and ordinary Linux or Windows desktops.
 
 ### Do you want to help out? Read the [Contribution Guide](CONTRIBUTING.md).
 
@@ -10,16 +10,16 @@ This is a client for Amazon's Alexa service. It is intended and tested to run on
 
 You will need:
 
-1. **A Linux box**
+1. **A Linux or Windows box**
     - a Raspberry Pi and an SD Card with a fresh install of Raspbian
     - or an Orange Pi with Armbian
-    - or pretty much any up-to-date Linux system
+    - or pretty much any up-to-date Linux/Windows system
 2. **Audio peripherals**
     - external speaker with 3.5mm Jack
     - USB Sound Dongle and microphone
-3. Other
-    - (optional) (Raspberry Pi) a push button connected between GPIO 18 and GND (configurable)
-    - (optional) (Raspberry Pi) a dual colour LED (or 2 single LEDs) connected to GPIO 24 & 25 (configurable)
+3. **Optional (only for Raspberry Pi)**
+    - a push button connected between GPIO 18 and GND (configurable)
+    - a dual colour LED (or 2 single LEDs) connected between GPIO 24 & 25 and GND (configurable)
 
 ## You wanna give it a try? Check out the [Installation Guide](https://github.com/alexa-pi/AlexaPi/wiki/Installation).
 

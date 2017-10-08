@@ -498,6 +498,8 @@ trigger_thread = None
 def trigger_callback(trigger):
 	global trigger_thread
 
+	logger.info("Triggered: %s", trigger.name)
+
 	triggers.disable()
 
 	trigger_thread = threading.Thread(target=trigger_process, args=(trigger,))
@@ -540,8 +542,10 @@ def trigger_process(trigger):
 
 
 def cleanup(signal, frame):   # pylint: disable=redefined-outer-name,unused-argument
-	platform.cleanup()
+	triggers.disable()
+	capture.cleanup()
 	pHandler.cleanup()
+	platform.cleanup()
 	shutil.rmtree(tmp_path)
 
 	if event_commands['shutdown']:
@@ -551,9 +555,6 @@ def cleanup(signal, frame):   # pylint: disable=redefined-outer-name,unused-argu
 
 
 if __name__ == "__main__":
-
-	for sig in (signal.SIGABRT, signal.SIGILL, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
-		signal.signal(sig, cleanup)
 
 	if event_commands['startup']:
 		subprocess.Popen(event_commands['startup'], shell=True, stdout=subprocess.PIPE)
@@ -566,11 +567,14 @@ if __name__ == "__main__":
 
 	capture.setup(platform.indicate_recording)
 
-	triggers.init(config, trigger_callback)
+	triggers.init(config, trigger_callback, capture)
 	triggers.setup()
 
 	pHandler.setup()
 	platform.setup()
+
+	for sig in (signal.SIGABRT, signal.SIGILL, signal.SIGINT, signal.SIGSEGV, signal.SIGTERM):
+		signal.signal(sig, cleanup)
 
 	logger.info("Checking Internet Connection ...")
 	while not internet_on():

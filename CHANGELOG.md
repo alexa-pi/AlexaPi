@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Added
+- Windows support
+
+### Changed
+- Switched from pyalsaaudio (ALSA) to pyaudio (PortAudio)
+    - You might have to change the `input_device` in your config, but this name will stay forever (we are not planning any change).
+    - Also removed config option to allow unlisted devices as this is not possible from now on (you have to select a device from the list).
+
 ## [1.5.1] - 2017-10-08
 Small bugfix release.
 

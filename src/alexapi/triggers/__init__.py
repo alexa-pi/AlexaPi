@@ -3,14 +3,17 @@ import importlib
 triggers = {}
 
 
-def init(config, trigger_callback):
+def init(config, trigger_callback, capture):
 
 	for name in config['triggers']:
 		if config['triggers'][name]['enabled']:
 			im = importlib.import_module('alexapi.triggers.' + name + 'trigger', package=None)
 			cl = getattr(im, name.capitalize() + 'Trigger')
 
-			triggers[name] = cl(config, trigger_callback)
+			if cl.type == TYPES.VOICE:
+				triggers[name] = cl(config, trigger_callback, capture)
+			else:
+				triggers[name] = cl(config, trigger_callback)
 
 
 def setup():

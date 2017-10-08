@@ -14,7 +14,5 @@ EOL
 }
 
 function install_device_config {
-    config_set 'input_device' 'plughw:CARD=Device,DEV=0'
-
     config_set 'device' 'raspberrypi'
 }

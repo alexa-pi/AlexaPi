@@ -1,8 +1,8 @@
 import os
 import threading
 import logging
+import platform
 
-import alsaaudio
 from pocketsphinx import get_model_path
 from pocketsphinx.pocketsphinx import Decoder
 
@@ -16,8 +16,15 @@ class PocketsphinxTrigger(BaseTrigger):
 
 	type = triggers.TYPES.VOICE
 
-	def __init__(self, config, trigger_callback):
+	AUDIO_CHUNK_SIZE = 1024
+	AUDIO_RATE = 16000
+
+	_capture = None
+
+	def __init__(self, config, trigger_callback, capture):
 		super(PocketsphinxTrigger, self).__init__(config, trigger_callback, 'pocketsphinx')
+
+		self._capture = capture
 
 		self._enabled_lock = threading.Event()
 		self._disabled_sync_lock = threading.Event()
@@ -37,7 +44,12 @@ class PocketsphinxTrigger(BaseTrigger):
 
 		# Hide the VERY verbose logging information when not in debug
 		if logging.getLogger('alexapi').getEffectiveLevel() != logging.DEBUG:
-			ps_config.set_string('-logfn', '/dev/null')
+
+			null_path = '/dev/null'
+			if platform.system() == 'Windows':
+				null_path = 'nul'
+
+			ps_config.set_string('-logfn', null_path)
 
 		# Process audio chunk by chunk. On keyword detected perform action and restart search
 		self._decoder = Decoder(ps_config)
@@ -51,12 +63,7 @@ class PocketsphinxTrigger(BaseTrigger):
 		while True:
 			self._enabled_lock.wait()
 
-			# Enable reading microphone raw data
-			inp = alsaaudio.PCM(alsaaudio.PCM_CAPTURE, alsaaudio.PCM_NORMAL, self._config['sound']['input_device'])
-			inp.setchannels(1)
-			inp.setrate(16000)
-			inp.setformat(alsaaudio.PCM_FORMAT_S16_LE)
-			inp.setperiodsize(1024)
+			self._capture.handle_init(self.AUDIO_RATE, self.AUDIO_CHUNK_SIZE)
 
 			self._decoder.start_utt()
 
@@ -67,15 +74,14 @@ class PocketsphinxTrigger(BaseTrigger):
 					break
 
 				# Read from microphone
-				_, buf = inp.read()
+				data = self._capture.handle_read()
 
 				# Detect if keyword/trigger word was said
-				self._decoder.process_raw(buf, False, False)
+				self._decoder.process_raw(data, False, False)
 
 				triggered = self._decoder.hyp() is not None
 
-			# To avoid overflows close the microphone connection
-			inp.close()
+			self._capture.handle_release()
 
 			self._decoder.end_utt()
 

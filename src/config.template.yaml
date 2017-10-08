@@ -7,11 +7,9 @@
 logging: INFO
 
 sound:
-  # Name of your ALSA microphone/soundcard in arecord -L
-  input_device: "default"
-  # This is here if none of the listed devices works for you and you need to use a value like "plughw:1"
-  # This is an override that is normally not needed and is a last resort.
-  allow_unlisted_input_device: false
+  # Name of your microphone device in PortAudio
+  # leave empty for default
+  input_device: ""
 
   playback_handler: "vlc"
 
