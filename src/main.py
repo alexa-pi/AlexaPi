@@ -13,6 +13,7 @@ import json
 import optparse
 import email
 import subprocess
+import hashlib
 from future.builtins import bytes
 
 import yaml
@@ -138,12 +139,12 @@ class Player(object):
 
 			url = stream['streamUrl']
 			if stream['streamUrl'].startswith("cid:"):
-				url = "file://" + tmp_path + stream['streamUrl'].lstrip("cid:") + ".mp3"
+				url = "file://" + tmp_path + hashlib.md5(stream['streamUrl'].replace("cid:", "", 1).encode()).hexdigest() + ".mp3"
 
 			if (url.find('radiotime.com') != -1):
 				url = self.tunein_playlist(url)
 
-			self.pHandler.queued_play(mrl_fix(url), stream['offsetInMilliseconds'], audio_type='media', stream_id=streamId)
+			self.pHandler.queued_play(url, stream['offsetInMilliseconds'], audio_type='media', stream_id=streamId)
 
 	def play_speech(self, mrl):
 		self.stop()
@@ -208,15 +209,6 @@ tmp_path = os.path.join(tempfile.mkdtemp(prefix='AlexaPi-runtime-'), '')
 
 MAX_VOLUME = 100
 MIN_VOLUME = 30
-
-
-def mrl_fix(url):
-	if ('#' in url) and url.startswith('file://'):
-		new_url = url.replace('#', '.hashMark.')
-		os.rename(url.replace('file://', ''), new_url.replace('file://', ''))
-		url = new_url
-
-	return url
 
 
 def internet_on():
@@ -438,7 +430,7 @@ def process_response(response):
 				j = json.loads(payload.get_payload())
 				logger.debug("JSON String Returned: %s", json.dumps(j, indent=2))
 			elif payload.get_content_type() == "audio/mpeg":
-				filename = tmp_path + payload.get('Content-ID').strip("<>") + ".mp3"
+				filename = tmp_path + hashlib.md5(payload.get('Content-ID').strip("<>").encode()).hexdigest() + ".mp3"
 				with open(filename, 'wb') as f:
 					f.write(payload.get_payload(decode=True))
 			else:
@@ -452,7 +444,7 @@ def process_response(response):
 			for directive in j['messageBody']['directives']:
 				if directive['namespace'] == 'SpeechSynthesizer':
 					if directive['name'] == 'speak':
-						player.play_speech(mrl_fix("file://" + tmp_path + directive['payload']['audioContent'].lstrip("cid:") + ".mp3"))
+						player.play_speech("file://" + tmp_path + hashlib.md5(directive['payload']['audioContent'].replace("cid:", "", 1).encode()).hexdigest() + ".mp3")
 
 				elif directive['namespace'] == 'SpeechRecognizer':
 					if directive['name'] == 'listen':

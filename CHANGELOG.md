@@ -13,6 +13,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
     - You might have to change the `input_device` in your config, but this name will stay forever (we are not planning any change).
     - Also removed config option to allow unlisted devices as this is not possible from now on (you have to select a device from the list).
 
+## [1.5.1] - 2017-10-08
+Small bugfix release.
+
+### Fixed
+- Removed a few potentially confusing messages for users.
+- Fix bad characters in stored filenames which prevented them from playing and might have resulted in a crash. Fixes crashes when asking for weather.
+
 ## [1.5] - 2017-03-10
 Please run the installation script again to install / upgrade all the dependencies. 
 There are no config changes this time. 
@@ -138,7 +145,8 @@ This is mainly a test of doing bugfix releases.
 @sammachin created the project in January 2016 and made significant changes that lead to this version.
 
 
-[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.5...HEAD
+[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.5.1...HEAD
+[1.5.1]: https://github.com/alexa-pi/AlexaPi/compare/v1.5...v1.5.1
 [1.5]: https://github.com/alexa-pi/AlexaPi/compare/v1.4...v1.5
 [1.4]: https://github.com/alexa-pi/AlexaPi/compare/v1.3...v1.4
 [1.3.1]: https://github.com/alexa-pi/AlexaPi/compare/v1.3...v1.3.1
