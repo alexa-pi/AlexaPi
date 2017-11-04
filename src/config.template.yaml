@@ -76,6 +76,21 @@ triggers:
     phrase: "alexa"
     threshold: 1e-10
 
+  snowboy:
+    enabled: false
+    voice_confirm: true
+
+    # Use your own model or a file from the default snowboy distribution:
+    #
+    # {distribution}/alexa.umdl
+    # {distribution}/snowboy.umdl
+    # {distribution}/alexa/alexa_02092017.umdl
+    # {distribution}/alexa/alexa-avs-sample-app/alexa.umdl
+
+    model: "{distribution}/alexa/alexa_02092017.umdl"
+    sensitivity: 0.5
+
+
 # Commands to run before and after an interaction begins. Leave empty to disable.
 event_commands:
 

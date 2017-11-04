@@ -18,11 +18,15 @@ sudo: required
 # Some discussion: https://github.com/koalaman/shellcheck/issues/785
 before_install:
   - sudo apt-get update
-  - sudo apt-get install -y wget git swig portaudio19-dev libpulse-dev vlc-nox shellcheck
+  - sudo apt-get install -y wget git portaudio19-dev libpulse-dev vlc-nox shellcheck sox libatlas-base-dev
+  - sudo wget http://mirrors.kernel.org/ubuntu/pool/universe/s/swig/swig3.0_3.0.10-1.1_amd64.deb
+  - sudo dpkg -i swig3.0_3.0.10-1.1_amd64.deb
+  - sudo ln -s /usr/bin/swig3.0 /usr/local/bin/swig
 
 install:
   - pip install -r src/requirements.txt
   - pip install -r src/dev-requirements.txt
+  - pip install git+https://github.com/Kitt-AI/snowboy.git || true
   - yes | pip install git+https://github.com/duxingkei33/orangepi_PC_gpio_pyH3.git -v
 
 script:
