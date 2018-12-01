@@ -5,11 +5,11 @@ RUN_USER="alexapi"
 HOME_DIR="/var/lib/AlexaPi"
 
 function run_python {
-    python2 "$@"
+    python3 "$@"
 }
 
 function run_pip {
-    pip2 "$@"
+    pip3 "$@"
 }
 
 function init_classic {

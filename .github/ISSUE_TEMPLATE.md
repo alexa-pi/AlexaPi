@@ -9,6 +9,7 @@ In order to help troubleshooting, be sure to include the following information:
 **Output of the [audio debugging script](https://github.com/alexa-pi/AlexaPi/wiki/Audio-setup-&-debugging#audio-debugging-script).**
 
 **Your OS (including version) where you are running AlexaPi:**
+_Note: Raspbian older than Stretch is not supported!_
 ```
 ```
 
@@ -17,7 +18,7 @@ In order to help troubleshooting, be sure to include the following information:
 
 ```
 
-**Python release (`python2 --version`):**
+**Python release (`python3 --version`):**
 ```
 
 ```
