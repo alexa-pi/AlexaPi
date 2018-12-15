@@ -5,6 +5,8 @@ import json
 import socket
 import uuid
 import hashlib
+import optparse
+import logging
 from urllib.parse import quote
 
 import yaml
@@ -15,6 +17,19 @@ import alexapi.config
 
 with open(alexapi.config.filename, 'r') as stream:
 	config = yaml.load(stream)
+
+parser = optparse.OptionParser()
+parser.add_option('-d', '--debug',
+	dest="debug",
+	action="store_true",
+	default=False,
+	help="display debug messages")
+
+cmdopts, cmdargs = parser.parse_args()
+debug = cmdopts.debug
+
+if debug:
+	logging.basicConfig(level=logging.DEBUG)
 
 
 class Start:
