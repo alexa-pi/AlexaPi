@@ -3,11 +3,9 @@ language: python
 cache: pip
 
 python:
-  - "2.7"
-  - "3.4"
   - "3.5"
-# pylint doesn't work on 3.6 yet
-#  - "3.6"
+  - "3.6"
+  - "3.7"
 
 dist: xenial
 
