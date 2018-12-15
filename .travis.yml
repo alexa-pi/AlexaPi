@@ -3,33 +3,26 @@ language: python
 cache: pip
 
 python:
-  - "2.7"
-  - "3.4"
   - "3.5"
-# pylint doesn't work on 3.6 yet
-#  - "3.6"
+  - "3.6"
+  - "3.7"
 
-dist: trusty
-# On the container-based infrastructure, trusty-backports isn't available, hence this silly thing
-sudo: required
+dist: xenial
 
-# It installs old shellcheck from trusty-backports
-# Installing from Debian Sid or Ubuntu Zesty doesn't work
-# Some discussion: https://github.com/koalaman/shellcheck/issues/785
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y wget git portaudio19-dev libpulse-dev vlc-nox shellcheck sox libatlas-base-dev
-  - sudo wget http://mirrors.kernel.org/ubuntu/pool/universe/s/swig/swig3.0_3.0.10-1.1_amd64.deb
-  - sudo dpkg -i swig3.0_3.0.10-1.1_amd64.deb
+  - sudo wget http://mirrors.kernel.org/ubuntu/pool/universe/s/swig/swig3.0_3.0.10-1.2_amd64.deb
+  - sudo dpkg -i swig3.0_3.0.10-1.2_amd64.deb
   - sudo ln -s /usr/bin/swig3.0 /usr/local/bin/swig
+  - pip install pipenv
 
 install:
-  - pip install -r src/requirements.txt
-  - pip install -r src/dev-requirements.txt
-  - pip install git+https://github.com/Kitt-AI/snowboy.git || true
-  - yes | pip install git+https://github.com/duxingkei33/orangepi_PC_gpio_pyH3.git -v
+  - pipenv install --dev --deploy
+  - pipenv install git+https://github.com/Kitt-AI/snowboy.git#egg=snowboy || true
+#  - yes | pip install git+https://github.com/duxingkei33/orangepi_PC_gpio_pyH3.git#egg=pyA20 -v
 
 script:
-  - pylint --rcfile=pylintrc --ignore=tunein.py src/auth_web.py src/main.py src/alexapi
-  - python -c "import yaml; yaml.load(open('src/config.template.yaml'))"
-  - cd src/scripts && shellcheck -e 2164 ./inc/*.sh ./inc/os/*.sh ./inc/device/*.sh ./*.sh
+  - pipenv run lint
+  - pipenv run yamlcheck
+  - pipenv run shlint

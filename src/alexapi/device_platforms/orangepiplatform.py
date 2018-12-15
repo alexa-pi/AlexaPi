@@ -1,7 +1,7 @@
 import time
 import threading
 
-from pyA20.gpio import gpio as GPIO
+from pyA20.gpio import gpio as GPIO  # pylint: disable=import-error
 
 from .rpilikeplatform import RPiLikePlatform
 

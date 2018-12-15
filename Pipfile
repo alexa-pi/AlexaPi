@@ -1,0 +1,29 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pylint = "*"
+pyserial = "*"
+websocket-client = "*"
+fakerpigpio = "==0.3a0"
+chip-io = {git = "https://github.com/xtacocorex/CHIP_IO.git"}
+
+[packages]
+requests = "*"
+python-vlc = "*"
+webrtcvad = "*"
+pocketsphinx = "*"
+coloredlogs = "*"
+CherryPy = "*"
+PyAudio = "*"
+PyYAML = "*"
+
+[requires]
+#python_version = "3.7"
+
+[scripts]
+lint = "pylint --rcfile=pylintrc --ignore=tunein.py src/auth_web.py src/main.py src/alexapi"
+yamlcheck = "python -c \"import yaml; yaml.load(open('src/config.template.yaml'))\""
+shlint = "pipenv shell --anyway \"cd src/scripts && shellcheck -e 2164 -e 1117 ./inc/*.sh ./inc/os/*.sh ./inc/device/*.sh ./*.sh\" && exit"

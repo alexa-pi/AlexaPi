@@ -14,7 +14,6 @@ import optparse
 import email
 import subprocess
 import hashlib
-from future.builtins import bytes
 
 import yaml
 import requests
@@ -110,7 +109,7 @@ cl = getattr(im, config['platform']['device'].capitalize() + 'Platform')
 platform = cl(config)
 
 
-class Player(object):
+class Player:
 
 	config = None
 	platform = None
@@ -221,7 +220,7 @@ def internet_on():
 		return False
 
 
-class Token(object):
+class Token:
 
 	_token = ''
 	_timestamp = None
@@ -267,7 +266,7 @@ class Token(object):
 
 			logger.info("AVS token: Obtained successfully")
 		except requests.exceptions.RequestException as exp:
-			logger.critical("AVS token: Failed to obtain a token: " + str(exp))
+			logger.critical("AVS token: Failed to obtain a token: %s", str(exp))
 
 
 # from https://github.com/respeaker/Alexa/blob/master/alexa.py

@@ -6,12 +6,8 @@ try:
 except ImportError:
 	import http.server as BaseHTTPServer
 
-try:
-	from urllib.request import urlopen, URLError
-	import urllib.urlparse as urlparse
-except ImportError:
-	from urllib2 import urlopen, URLError
-	import urlparse
+from urllib.request import urlopen, URLError
+import urllib.parse as urlparse
 
 from .baseplatform import BasePlatform
 
@@ -120,7 +116,7 @@ class MagicmirrorPlatform(BasePlatform):
 			logger.error("URLError: %s", err.reason)
 			return
 
-		logger.debug("Response: " + response)
+		logger.debug("Response: %s", response)
 
 	def http_callback(self, query_dict):
 		if (query_dict['action'][0] == "requestrecord"):
@@ -129,8 +125,8 @@ class MagicmirrorPlatform(BasePlatform):
 				self._trigger_callback()
 
 			return True
-		else:
-			return False
+
+		return False
 
 	def cleanup(self):
 		logger.debug("Cleaning up Magic Mirror platform")

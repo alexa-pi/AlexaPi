@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 # Copied from snowboy
-class RingBuffer(object):
+class RingBuffer:
 	"""Ring buffer to hold audio from PortAudio"""
 	def __init__(self, size=4096):
 		self._buf = collections.deque(maxlen=size)

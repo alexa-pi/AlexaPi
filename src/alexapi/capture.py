@@ -15,7 +15,7 @@ import pyaudio # pylint: disable=wrong-import-position,wrong-import-order
 logger = logging.getLogger(__name__)
 
 
-class DeviceInfo(object):
+class DeviceInfo:
 
 	_pa = None
 
@@ -41,7 +41,7 @@ class DeviceInfo(object):
 		self._pa.terminate()
 
 
-class Capture(object):
+class Capture:
 
 	MAX_RECORDING_LENGTH = 8
 

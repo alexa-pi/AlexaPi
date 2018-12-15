@@ -2,9 +2,8 @@
 
 function install_os {
     pacman -Sy
-    pacman -S base-devel git python2 python2-pip swig portaudio libpulse vlc sox libmad libid3tag gcc --noconfirm --needed
+    pacman -S base-devel git python python-pip swig portaudio libpulse vlc sox libmad libid3tag gcc --noconfirm --needed
 
-    install -Dm644 ./unit-overrides/force-python2.conf /etc/systemd/system/AlexaPi.service.d/force-python2.conf
     systemctl daemon-reload
 }
 
