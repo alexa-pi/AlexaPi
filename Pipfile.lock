@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "a85313a3dd6536d13719fd68b117b25fe63e5f4530d827a3751a08210b537f49"
+            "sha256": "d3bb80bf9f044f986af90d7ce1f79b0e85380e53eb2a98e2bf5cd15162eb9b42"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -44,11 +44,11 @@
         },
         "cherrypy": {
             "hashes": [
-                "sha256:297937b8b69e583ea8a6d77b52a08d39bd3226471fce4dc7590c80134785ee89",
-                "sha256:3002fc47b982c3df4d08dbe5996b093fd73f85b650ab8df19e8b9b95f5c00520"
+                "sha256:4dd2f59b5af93bd9ca85f1ed0bb8295cd0f5a8ee2b84d476374d4e070aa5c615",
+                "sha256:626e305bca3c5d56a16e5f7d64bc8a4e25d26c41be1779f585fad2608edbc4c8"
             ],
             "index": "pypi",
-            "version": "==18.0.1"
+            "version": "==18.1.0"
         },
         "coloredlogs": {
             "hashes": [
@@ -74,10 +74,10 @@
         },
         "idna": {
             "hashes": [
-                "sha256:156a6814fb5ac1fc6850fb002e0852d56c0c8d2531923a51032d1b70760e186e",
-                "sha256:684a38a6f903c1d71d6d5fac066b58d7768af4de2b832e426ec79c30daa94a16"
+                "sha256:c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407",
+                "sha256:ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"
             ],
-            "version": "==2.7"
+            "version": "==2.8"
         },
         "jaraco.functools": {
             "hashes": [
@@ -170,18 +170,18 @@
         },
         "requests": {
             "hashes": [
-                "sha256:65b3a120e4329e33c9889db89c80976c5272f56ea92d3e74da8a463992e3ff54",
-                "sha256:ea881206e59f41dbd0bd445437d792e43906703fff75ca8ff43ccdb11f33f263"
+                "sha256:502a824f31acdacb3a35b6690b5fbf0bc41d63a24a45c4004352b0242707598e",
+                "sha256:7bf2a778576d825600030a110f3c0e3e8edc51dfaafe1c146e39a2027784957b"
             ],
             "index": "pypi",
-            "version": "==2.20.1"
+            "version": "==2.21.0"
         },
         "six": {
             "hashes": [
-                "sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9",
-                "sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb"
+                "sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c",
+                "sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73"
             ],
-            "version": "==1.11.0"
+            "version": "==1.12.0"
         },
         "tempora": {
             "hashes": [
@@ -297,10 +297,10 @@
         },
         "six": {
             "hashes": [
-                "sha256:70e8a77beed4562e7f14fe23a786b54f6296e34344c23bc42f07b15018ff98e9",
-                "sha256:832dc0e10feb1aa2c68dcc57dbb658f1c7e65b9b61af69048abc87a2db00a0eb"
+                "sha256:3350809f0555b11f552448330d0b52d5f24c91a322ea4a15ef22629740f3761c",
+                "sha256:d16a0141ec1a18405cd4ce8b4613101da75da0e9a7aec5bdd4fa804d0e0eba73"
             ],
-            "version": "==1.11.0"
+            "version": "==1.12.0"
         },
         "websocket-client": {
             "hashes": [

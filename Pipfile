@@ -11,14 +11,14 @@ fakerpigpio = "==0.3a0"
 chip-io = {git = "https://github.com/xtacocorex/CHIP_IO.git"}
 
 [packages]
-requests = ">=2.13.0"
+requests = "*"
 python-vlc = "*"
-webrtcvad = ">=2.0.10"
-pocketsphinx = ">=0.1.3"
+webrtcvad = "*"
+pocketsphinx = "*"
 coloredlogs = "*"
-future = ">=0.16.0"
-CherryPy = ">=10.1.1"
-PyAudio = ">=0.2.10"
+future = "*"
+CherryPy = "*"
+PyAudio = "*"
 PyYAML = "*"
 
 [requires]
