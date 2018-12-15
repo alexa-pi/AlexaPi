@@ -45,12 +45,12 @@ def cleanup(type_filter=None):
 			trigger.cleanup()
 
 
-class TYPES(object):
+class TYPES:
 	OTHER = 0
 	VOICE = 1
 
 
-class EVENT_TYPES(object): # pylint: disable=invalid-name
+class EVENT_TYPES: # pylint: disable=invalid-name
 	ONESHOT_VAD = 1
 	CONTINUOUS = 2
 	CONTINUOUS_VAD = 3

@@ -10,7 +10,7 @@ from alexapi.constants import RequestType, PlayerActivity
 logger = logging.getLogger(__name__)
 
 
-class PlaybackAudioType(object):
+class PlaybackAudioType:
 	SPEECH = 'speech'
 	MEDIA = 'media'
 
@@ -18,7 +18,7 @@ class PlaybackAudioType(object):
 		pass
 
 
-class PlaybackItem(object):
+class PlaybackItem:
 	def __init__(self, url, offset, audio_type, stream_id):
 		self.url = url
 		self.offset = offset
@@ -26,7 +26,7 @@ class PlaybackItem(object):
 		self.stream_id = stream_id
 
 
-class PlaybackLock(object):
+class PlaybackLock:
 	def __init__(self):
 		# This has inverted logic
 		self.play_lock = threading.Event()
@@ -44,7 +44,7 @@ class PlaybackLock(object):
 		self.is_playing = False
 
 
-class BaseHandler(object):
+class BaseHandler:
 	__metaclass__ = ABCMeta
 
 	def __init__(self, config, callback_report):

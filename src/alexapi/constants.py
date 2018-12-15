@@ -1,6 +1,6 @@
 
 
-class RequestType(object):
+class RequestType:
 	STARTED = 'STARTED'
 	INTERRUPTED = 'INTERRUPTED'
 	FINISHED = 'FINISHED'
@@ -11,7 +11,7 @@ class RequestType(object):
 
 
 
-class PlayerActivity(object):
+class PlayerActivity:
 	PLAYING = 'PLAYING'
 	PAUSED = 'PAUSED'
 	IDLE = 'IDLE'

@@ -6,15 +6,11 @@ import json
 import socket
 import uuid
 import hashlib
+from urllib.parse import quote
 
 import yaml
 import cherrypy
 import requests
-
-try:
-	from urllib.parse import quote
-except ImportError:
-	from urllib import quote
 
 import alexapi.config
 
@@ -22,7 +18,7 @@ with open(alexapi.config.filename, 'r') as stream:
 	config = yaml.load(stream)
 
 
-class Start(object):
+class Start:
 
 	def index(self):
 		sd = json.dumps({

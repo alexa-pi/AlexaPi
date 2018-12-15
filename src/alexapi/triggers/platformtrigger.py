@@ -70,7 +70,7 @@ class PlatformTrigger(BaseTrigger):
 					pass
 					# play_audio(self._pconfig['long_press']['audio_file'].replace('{resources_path}', resources_path))
 
-				logger.info("-- " + str(self._tconfig['long_press']['duration']) + " second button press detected. Running specified command.")
+				logger.info("-- %s second button press detected. Running specified command.", str(self._tconfig['long_press']['duration']))
 
 				os.system(self._tconfig['long_press']['command'])
 				break

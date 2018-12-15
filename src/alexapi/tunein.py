@@ -9,10 +9,7 @@ import logging
 import re
 import time
 
-try:
-    from urllib.parse import urlparse
-except ImportError:
-    from urlparse import urlparse
+from urllib.parse import urlparse
 
 from collections import OrderedDict
 from contextlib import closing
