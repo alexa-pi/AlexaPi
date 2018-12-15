@@ -12,7 +12,7 @@ echo -------------------------------------------
 
 echo Installing dependencies:
 
-python3 -m pip install -r "%apath%requirements.txt"
+python3 -m pip install -r "%apath%\..\requirements.txt"
 
 pause
 cls
