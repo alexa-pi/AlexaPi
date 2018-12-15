@@ -1,5 +1,3 @@
-from __future__ import unicode_literals
-
 try:
     import configparser
 except ImportError:
