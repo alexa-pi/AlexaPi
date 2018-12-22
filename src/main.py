@@ -14,7 +14,6 @@ import optparse
 import email
 import subprocess
 import hashlib
-from future.builtins import bytes
 
 import yaml
 import requests
@@ -110,7 +109,7 @@ cl = getattr(im, config['platform']['device'].capitalize() + 'Platform')
 platform = cl(config)
 
 
-class Player(object):
+class Player:
 
 	config = None
 	platform = None
@@ -221,7 +220,7 @@ def internet_on():
 		return False
 
 
-class Token(object):
+class Token:
 
 	_token = ''
 	_timestamp = None
@@ -267,7 +266,7 @@ class Token(object):
 
 			logger.info("AVS token: Obtained successfully")
 		except requests.exceptions.RequestException as exp:
-			logger.critical("AVS token: Failed to obtain a token: " + str(exp))
+			logger.critical("AVS token: Failed to obtain a token: %s", str(exp))
 
 
 # from https://github.com/respeaker/Alexa/blob/master/alexa.py
@@ -543,6 +542,7 @@ def trigger_process(trigger):
 
 def cleanup(signal, frame):   # pylint: disable=redefined-outer-name,unused-argument
 	triggers.disable()
+	triggers.cleanup()
 	capture.cleanup()
 	pHandler.cleanup()
 	platform.cleanup()
@@ -561,14 +561,13 @@ if __name__ == "__main__":
 
 	try:
 		capture = alexapi.capture.Capture(config, tmp_path)
+		capture.setup(platform.indicate_recording)
+
+		triggers.init(config, trigger_callback, capture)
+		triggers.setup()
 	except ConfigurationException as exp:
 		logger.critical(exp)
 		sys.exit(1)
-
-	capture.setup(platform.indicate_recording)
-
-	triggers.init(config, trigger_callback, capture)
-	triggers.setup()
 
 	pHandler.setup()
 	platform.setup()

@@ -132,9 +132,9 @@ cd "${ALEXASRC_DIRECTORY}"
 
 # This is here because of https://github.com/pypa/pip/issues/2984
 if run_pip --version | grep "pip 1.5"; then
-    run_pip install -r ./requirements.txt
+    run_pip install -r ../requirements.txt
 else
-    run_pip install --no-cache-dir -r ./requirements.txt
+    run_pip install --no-cache-dir -r ../requirements.txt
 fi
 
 install_device

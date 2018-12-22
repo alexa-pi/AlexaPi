@@ -12,12 +12,13 @@ logger = logging.getLogger(__name__)
 class PlatformTrigger(BaseTrigger):
 
 	type = triggers.TYPES.OTHER
+	name = 'platform'
 
 	_platform_continuous_callback = None
 
 	def __init__(self, config, trigger_callback):
 
-		super(PlatformTrigger, self).__init__(config, trigger_callback, 'platform')
+		super(PlatformTrigger, self).__init__(config, trigger_callback)
 
 		event_types = {
 			'oneshot-vad': triggers.EVENT_TYPES.ONESHOT_VAD,
@@ -69,7 +70,7 @@ class PlatformTrigger(BaseTrigger):
 					pass
 					# play_audio(self._pconfig['long_press']['audio_file'].replace('{resources_path}', resources_path))
 
-				logger.info("-- " + str(self._tconfig['long_press']['duration']) + " second button press detected. Running specified command.")
+				logger.info("-- %s second button press detected. Running specified command.", str(self._tconfig['long_press']['duration']))
 
 				os.system(self._tconfig['long_press']['command'])
 				break

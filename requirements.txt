@@ -1,0 +1,23 @@
+-i https://pypi.org/simple
+backports.functools-lru-cache==1.5
+certifi==2018.11.29
+chardet==3.0.4
+cheroot==6.5.2
+cherrypy==18.1.0
+coloredlogs==10.0
+humanfriendly==4.17
+idna==2.8
+jaraco.functools==1.20
+more-itertools==4.3.0
+pocketsphinx==0.1.15
+portend==2.3
+pyaudio==0.2.11
+python-vlc==3.0.4106
+pytz==2018.7
+pyyaml==3.13
+requests==2.21.0
+six==1.12.0
+tempora==1.14
+urllib3==1.24.1
+webrtcvad==2.0.10
+zc.lockfile==1.4

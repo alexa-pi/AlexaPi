@@ -2,6 +2,6 @@ echo off
 title AlexaPi for Windows
 cls
 
-python main.py -d
+python3 main.py -d
 
 pause

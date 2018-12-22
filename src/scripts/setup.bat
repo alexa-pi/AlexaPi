@@ -12,7 +12,7 @@ echo -------------------------------------------
 
 echo Installing dependencies:
 
-python -m pip install -r "%apath%requirements.txt"
+python3 -m pip install -r "%apath%\..\requirements.txt"
 
 pause
 cls
@@ -27,7 +27,7 @@ echo You HAVE TO set up Amazon keys in the config.yaml file now
 echo ######################################################################################################
 pause
 
-start python.exe auth_web.py
+start python3.exe auth_web.py
 
 echo =====
 echo Done!

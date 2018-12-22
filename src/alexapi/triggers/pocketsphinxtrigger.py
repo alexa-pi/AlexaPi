@@ -6,15 +6,14 @@ import platform
 from pocketsphinx import get_model_path
 from pocketsphinx.pocketsphinx import Decoder
 
-import alexapi.triggers as triggers
-from .basetrigger import BaseTrigger
+from .voicetrigger import VoiceTrigger
 
 logger = logging.getLogger(__name__)
 
 
-class PocketsphinxTrigger(BaseTrigger):
+class PocketsphinxTrigger(VoiceTrigger):
 
-	type = triggers.TYPES.VOICE
+	name = 'pocketsphinx'
 
 	AUDIO_CHUNK_SIZE = 1024
 	AUDIO_RATE = 16000
@@ -22,7 +21,7 @@ class PocketsphinxTrigger(BaseTrigger):
 	_capture = None
 
 	def __init__(self, config, trigger_callback, capture):
-		super(PocketsphinxTrigger, self).__init__(config, trigger_callback, 'pocketsphinx')
+		super(PocketsphinxTrigger, self).__init__(config, trigger_callback)
 
 		self._capture = capture
 
@@ -52,12 +51,7 @@ class PocketsphinxTrigger(BaseTrigger):
 			ps_config.set_string('-logfn', null_path)
 
 		# Process audio chunk by chunk. On keyword detected perform action and restart search
-		self._decoder = Decoder(ps_config)
-
-	def run(self):
-		thread = threading.Thread(target=self.thread, args=())
-		thread.setDaemon(True)
-		thread.start()
+		self._detector = Decoder(ps_config)
 
 	def thread(self):
 		while True:
@@ -65,7 +59,7 @@ class PocketsphinxTrigger(BaseTrigger):
 
 			self._capture.handle_init(self.AUDIO_RATE, self.AUDIO_CHUNK_SIZE)
 
-			self._decoder.start_utt()
+			self._detector.start_utt()
 
 			triggered = False
 			while not triggered:
@@ -77,23 +71,15 @@ class PocketsphinxTrigger(BaseTrigger):
 				data = self._capture.handle_read()
 
 				# Detect if keyword/trigger word was said
-				self._decoder.process_raw(data, False, False)
+				self._detector.process_raw(data, False, False)
 
-				triggered = self._decoder.hyp() is not None
+				triggered = self._detector.hyp() is not None
 
 			self._capture.handle_release()
 
-			self._decoder.end_utt()
+			self._detector.end_utt()
 
 			self._disabled_sync_lock.set()
 
 			if triggered:
 				self._trigger_callback(self)
-
-	def enable(self):
-		self._enabled_lock.set()
-		self._disabled_sync_lock.clear()
-
-	def disable(self):
-		self._enabled_lock.clear()
-		self._disabled_sync_lock.wait()
