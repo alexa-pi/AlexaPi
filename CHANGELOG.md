@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Fixed
+- Debian: `vlc-nox` dependency - replaced by `vlc-bin` & `vlc-plugin-base` - it was only a transitional dummy package in Stretch and is no longer available in Buster
+
 ## [1.7] - 2018-12-22
 
 ### Added
