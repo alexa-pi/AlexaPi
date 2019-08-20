@@ -416,82 +416,82 @@ def alexa_playback_progress_report_request(requestType, playerActivity, stream_i
 def process_response(response):
 	logger.debug("Processing Request Response...")
 
-	if response.status_code == 200:
-		try:
-			data = bytes("Content-Type: ", 'utf-8') + bytes(response.headers['content-type'], 'utf-8') + bytes('\r\n\r\n', 'utf-8') + response.content
-			msg = email.message_from_bytes(data) # pylint: disable=no-member
-		except AttributeError:
-			data = "Content-Type: " + response.headers['content-type'] + '\r\n\r\n' + response.content
-			msg = email.message_from_string(data)
-
-		for payload in msg.get_payload():
-			if payload.get_content_type() == "application/json":
-				j = json.loads(payload.get_payload())
-				logger.debug("JSON String Returned: %s", json.dumps(j, indent=2))
-			elif payload.get_content_type() == "audio/mpeg":
-				filename = tmp_path + hashlib.md5(payload.get('Content-ID').strip("<>").encode()).hexdigest() + ".mp3"
-				with open(filename, 'wb') as f:
-					f.write(payload.get_payload(decode=True))
-			else:
-				logger.debug("NEW CONTENT TYPE RETURNED: %s", payload.get_content_type())
-
-		# Now process the response
-		if 'directives' in j['messageBody']:
-			if not j['messageBody']['directives']:
-				logger.debug("0 Directives received")
-
-			for directive in j['messageBody']['directives']:
-				if directive['namespace'] == 'SpeechSynthesizer':
-					if directive['name'] == 'speak':
-						player.play_speech("file://" + tmp_path + hashlib.md5(directive['payload']['audioContent'].replace("cid:", "", 1).encode()).hexdigest() + ".mp3")
-
-				elif directive['namespace'] == 'SpeechRecognizer':
-					if directive['name'] == 'listen':
-						logger.debug("Further Input Expected, timeout in: %sms", directive['payload']['timeoutIntervalInMillis'])
-
-						player.play_speech(resources_path + 'beep.wav')
-						timeout = directive['payload']['timeoutIntervalInMillis'] / 116
-						audio_stream = capture.silence_listener(timeout)
-
-						# now process the response
-						alexa_speech_recognizer(audio_stream)
-
-				elif directive['namespace'] == 'AudioPlayer':
-					if directive['name'] == 'play':
-						player.play_playlist(directive['payload'])
-
-				elif directive['namespace'] == "Speaker":
-					# speaker control such as volume
-					if directive['name'] == 'SetVolume':
-						vol_token = directive['payload']['volume']
-						type_token = directive['payload']['adjustmentType']
-						if (type_token == 'relative'):
-							volume = player.get_volume() + int(vol_token)
-						else:
-							volume = int(vol_token)
-
-						if (volume > MAX_VOLUME):
-							volume = MAX_VOLUME
-						elif (volume < MIN_VOLUME):
-							volume = MIN_VOLUME
-
-						player.set_volume(volume)
-
-						logger.debug("new volume = %s", volume)
-
-		# Additional Audio Iten
-		elif 'audioItem' in j['messageBody']:
-			player.play_playlist(j['messageBody'])
-
+	if response.status_code == 204:
+		logger.debug("Request Response is null (This is OKAY!)")
 		return
 
-	elif response.status_code == 204:
-		logger.debug("Request Response is null (This is OKAY!)")
-	else:
+	if response.status_code != 200:
 		logger.info("(process_response Error) Status Code: %s", response.status_code)
 		response.connection.close()
-
 		platform.indicate_failure()
+		return
+
+	try:
+		data = bytes("Content-Type: ", 'utf-8') + bytes(response.headers['content-type'], 'utf-8') + bytes('\r\n\r\n', 'utf-8') + response.content
+		msg = email.message_from_bytes(data) # pylint: disable=no-member
+	except AttributeError:
+		data = "Content-Type: " + response.headers['content-type'] + '\r\n\r\n' + response.content
+		msg = email.message_from_string(data)
+
+	for payload in msg.get_payload():
+		if payload.get_content_type() == "application/json":
+			j = json.loads(payload.get_payload())
+			logger.debug("JSON String Returned: %s", json.dumps(j, indent=2))
+		elif payload.get_content_type() == "audio/mpeg":
+			filename = tmp_path + hashlib.md5(payload.get('Content-ID').strip("<>").encode()).hexdigest() + ".mp3"
+			with open(filename, 'wb') as f:
+				f.write(payload.get_payload(decode=True))
+		else:
+			logger.debug("NEW CONTENT TYPE RETURNED: %s", payload.get_content_type())
+
+	# Now process the response
+	if 'directives' in j['messageBody']:
+		if not j['messageBody']['directives']:
+			logger.debug("0 Directives received")
+
+		for directive in j['messageBody']['directives']:
+			if directive['namespace'] == 'SpeechSynthesizer':
+				if directive['name'] == 'speak':
+					player.play_speech("file://" + tmp_path + hashlib.md5(directive['payload']['audioContent'].replace("cid:", "", 1).encode()).hexdigest() + ".mp3")
+
+			elif directive['namespace'] == 'SpeechRecognizer':
+				if directive['name'] == 'listen':
+					logger.debug("Further Input Expected, timeout in: %sms", directive['payload']['timeoutIntervalInMillis'])
+
+					player.play_speech(resources_path + 'beep.wav')
+					timeout = directive['payload']['timeoutIntervalInMillis'] / 116
+					audio_stream = capture.silence_listener(timeout)
+
+					# now process the response
+					alexa_speech_recognizer(audio_stream)
+
+			elif directive['namespace'] == 'AudioPlayer':
+				if directive['name'] == 'play':
+					player.play_playlist(directive['payload'])
+
+			elif directive['namespace'] == "Speaker":
+				# speaker control such as volume
+				if directive['name'] == 'SetVolume':
+					vol_token = directive['payload']['volume']
+					type_token = directive['payload']['adjustmentType']
+					if (type_token == 'relative'):
+						volume = player.get_volume() + int(vol_token)
+					else:
+						volume = int(vol_token)
+
+					if (volume > MAX_VOLUME):
+						volume = MAX_VOLUME
+					elif (volume < MIN_VOLUME):
+						volume = MIN_VOLUME
+
+					player.set_volume(volume)
+
+					logger.debug("new volume = %s", volume)
+
+	# Additional Audio Iten
+	elif 'audioItem' in j['messageBody']:
+		player.play_playlist(j['messageBody'])
+
 
 trigger_thread = None
 def trigger_callback(trigger):
