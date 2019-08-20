@@ -12,8 +12,8 @@ dist: xenial
 before_install:
   - sudo apt-get update
   - sudo apt-get install -y wget git portaudio19-dev libpulse-dev vlc-nox shellcheck sox libatlas-base-dev
-  - sudo wget http://mirrors.kernel.org/ubuntu/pool/universe/s/swig/swig3.0_3.0.10-1.2_amd64.deb
-  - sudo dpkg -i swig3.0_3.0.10-1.2_amd64.deb
+  - sudo wget http://mirrors.kernel.org/ubuntu/pool/universe/s/swig/swig3.0_3.0.12-2_amd64.deb
+  - sudo dpkg -i swig3.0_3.0.12-2_amd64.deb
   - sudo ln -s /usr/bin/swig3.0 /usr/local/bin/swig
   - pip install pipenv
 
