@@ -5,6 +5,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/).
 
 ## [Unreleased]
 
+## [1.8] - 2019-08-20
+
+### Changed
+- updated dependencies
+
+### Fixed
+- Debian: `vlc-nox` dependency - replaced by `vlc-bin` & `vlc-plugin-base` - it was only a transitional dummy package in Stretch and is no longer available in Buster
+
 ## [1.7] - 2018-12-22
 
 ### Added
@@ -165,7 +173,8 @@ This is mainly a test of doing bugfix releases.
 @sammachin created the project in January 2016 and made significant changes that lead to this version.
 
 
-[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.7...HEAD
+[Unreleased]: https://github.com/alexa-pi/AlexaPi/compare/v1.8...HEAD
+[1.8]: https://github.com/alexa-pi/AlexaPi/compare/v1.7...v1.8
 [1.7]: https://github.com/alexa-pi/AlexaPi/compare/v1.6...v1.7
 [1.6]: https://github.com/alexa-pi/AlexaPi/compare/v1.5.1...v1.6
 [1.5.1]: https://github.com/alexa-pi/AlexaPi/compare/v1.5...v1.5.1
